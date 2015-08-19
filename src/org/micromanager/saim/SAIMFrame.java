@@ -7,7 +7,8 @@
  * builder. It is based of ExampleFrame.java
  *
  *
- * Nico Stuurman, copyright UCSF, 2012
+ * Nico Stuurman, copyright Regents of the University of California, 2012
+ * Kate Carbone, 2015
  *
  * LICENSE: This file is distributed under the BSD license. License text is
  * included with the source distribution.
@@ -30,14 +31,11 @@ import java.util.prefs.Preferences;
 import org.micromanager.api.ScriptInterface;
 
 import org.jfree.data.xy.XYSeries;
-import java.util.ArrayList;
-import javax.swing.JComboBox;
 import mmcorej.DeviceType;
 import mmcorej.StrVector;
 import org.micromanager.asidispim.Data.Prefs;
 import org.micromanager.asidispim.fit.Fitter;
 import org.micromanager.asidispim.Utils.PlotUtils;
-import org.micromanager.utils.MMScriptException;
 import org.micromanager.utils.ReportingUtils;
 import java.text.DecimalFormat;
 
@@ -49,12 +47,12 @@ public class SAIMFrame extends javax.swing.JFrame {
 
     private final ScriptInterface gui_;
     private final CMMCore core_;
-    private Preferences prefs_;
+    private final Preferences prefs_;
 
-    private NumberFormat nf_;
+    private final NumberFormat nf_;
 
-    private int frameXPos_ = 100;
-    private int frameYPos_ = 100;
+    private final int frameXPos_ = 100;
+    private final int frameYPos_ = 100;
 
     private static final String FRAMEXPOS = "FRAMEXPOS";
     private static final String FRAMEYPOS = "FRAMEYPOS";
@@ -300,8 +298,8 @@ public class SAIMFrame extends javax.swing.JFrame {
                         XYSeries dect1readings = new XYSeries(new Integer(1536), false, true);
                         XYSeries dect2readings = new XYSeries(new Integer(1536), false, true);
                         //comment out these lines to disable changing motor position
-                        //core_.setProperty(deviceName, propName, pos);
-                        //core_.waitForDevice(deviceName);
+                        core_.setProperty(deviceName, propName, pos);
+                        core_.waitForDevice(deviceName);
                         core_.setSerialPortCommand(port, "1", "");
                         gui_.message("Image: " + angle + ", Pos: " + pos);
                         for (i = 0; i < 1536; i++) {
@@ -323,8 +321,7 @@ public class SAIMFrame extends javax.swing.JFrame {
                         int size = dect1readings.getItemCount();
                         XYSeries dect1readingsFlip = new XYSeries(new Integer(size), false, true);
                         //dect1readingsFlip = dect1readings;
-                        int a = 0;
-                        for (a = 0; a < size; a++) {
+                        for (int a = 0; a < size; a++) {
                             //there is a problem with the size of dect1readings
                             Number pxvalue = dect1readings.getY(size - 1 - a);
                             dect1readingsFlip.add(a, pxvalue);
@@ -334,13 +331,11 @@ public class SAIMFrame extends javax.swing.JFrame {
                         XYSeries dect2readingsFlip = new XYSeries(new Float(size), false, true);
                         //dect2readingsFlip = dect2readings;
                         //original code for dect2readingsFlip:
-                        int j = 0;
-                        for (j = 0; j < halfSize; j++) {
+                        for (int j = 0; j < halfSize; j++) {
                             Number pxvalue = dect2readings.getY(halfSize - 1 - j);
                             dect2readingsFlip.add(j*1, pxvalue);
                         }
-                        int k = 0;
-                        for (k = 0; k < halfSize; k++) {
+                        for (int k = 0; k < halfSize; k++) {
                             Number pxvalue = dect2readings.getY(halfSize + k);
                             dect2readingsFlip.add((halfSize + k)*1, pxvalue);
                         }
@@ -364,8 +359,7 @@ public class SAIMFrame extends javax.swing.JFrame {
                         pos = pos + angleStepSize;
                     }
                     XYSeries trueAngles = new XYSeries(new Integer(nrAngles), false, true);
-                    int l = 0;
-                    for (l = 0; l <= nrAngles; l++) {
+                    for (int l = 0; l <= nrAngles; l++) {
                         Number angle = dect1gaussianMeans.getX(l);
                         Number dect1val = dect1gaussianMeans.getY(l);
                         Number dect2val = dect2gaussianMeans.getY(l);
