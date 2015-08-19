@@ -1,15 +1,10 @@
 /**
- * ExampleFrame.java
+ * SAIMFrame.java
  *
  *
- * This is merely a skeleton showing how to start writing a Micro-Manager
- * plugin. This specific example uses the NetBeans GUI builder. You can safely
- * take out those parts (and remove the .form file) and build your own
- * interface.
- *
- *
- * It should not be added to the Micro-Manager distribution (as it is quite
- * limited in functionality).
+ * This is a Micro-Manager plugin for using a Scanning Angle Interference 
+ * Microscopy calibration device. This specific example uses the NetBeans GUI 
+ * builder. It is based of ExampleFrame.java
  *
  *
  * Nico Stuurman, copyright UCSF, 2012
@@ -284,8 +279,8 @@ public class SAIMFrame extends javax.swing.JFrame {
         final String port = jComboBox1.getSelectedItem().toString();
 
         // Set these variables to the correct values and leave
-        String deviceName = "TITIRF";
-        String propName = "Position";
+        final String deviceName = "TITIRF";
+        final String propName = "Position";
 
         class calThread extends Thread {
 
@@ -293,15 +288,18 @@ public class SAIMFrame extends javax.swing.JFrame {
                 super(threadName);
             }
 
+            @Override
             public void run() {
                 int i = 0;
                 try {
+                    core_.setShutterOpen(true);
                     XYSeries dect1gaussianMeans = new XYSeries(new Integer(nrAngles), false, true);
                     XYSeries dect2gaussianMeans = new XYSeries(new Integer(nrAngles), false, true);
                     int pos = startPosition;
                     for (int angle = 0; angle <= nrAngles; angle++) {
                         XYSeries dect1readings = new XYSeries(new Integer(1536), false, true);
                         XYSeries dect2readings = new XYSeries(new Integer(1536), false, true);
+                        //comment out these lines to disable changing motor position
                         //core_.setProperty(deviceName, propName, pos);
                         //core_.waitForDevice(deviceName);
                         core_.setSerialPortCommand(port, "1", "");
@@ -388,6 +386,7 @@ public class SAIMFrame extends javax.swing.JFrame {
                     String coeff2 = new DecimalFormat("#.##").format(calCurve[1]); 
                     String offset = new DecimalFormat("#.##").format(calCurve[2]); 
                     jLabel7.setText("y = " + coeff1 + "* x^2 + " + coeff2 + "x + " + offset);
+                    core_.setShutterOpen(false);
                 } catch (Exception ex) {
                     ReportingUtils.logError(ex, "Ran until # " + i);
                 }
