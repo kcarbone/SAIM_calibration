@@ -33,10 +33,8 @@ import org.micromanager.api.ScriptInterface;
 import org.jfree.data.xy.XYSeries;
 import mmcorej.DeviceType;
 import mmcorej.StrVector;
-import org.micromanager.asidispim.Data.Prefs;
-import org.micromanager.asidispim.fit.Fitter;
-import org.micromanager.asidispim.Utils.PlotUtils;
-import org.micromanager.utils.ReportingUtils;
+import org.micromanager.saim.fit.Fitter;
+import org.micromanager.saim.plot.PlotUtils;
 import java.text.DecimalFormat;
 
 /**
@@ -342,7 +340,7 @@ public class SAIMFrame extends javax.swing.JFrame {
                         //reverse transposition for debugging
                         dect2readingsFlip = dect2readings;
                         
-                        PlotUtils myPlotter = new PlotUtils(new Prefs(prefs_), "Beam Location");
+                        PlotUtils myPlotter = new PlotUtils(prefs_);
                         XYSeries[] toPlot = new XYSeries[2];
                         toPlot[0] = dect1readingsFlip;
                         //toPlot[0] = dect2readings;
@@ -370,7 +368,7 @@ public class SAIMFrame extends javax.swing.JFrame {
                         Number trueAngle = Math.toDegrees(Math.atan(xdisp/ydisp));
                         trueAngles.add(angle, trueAngle);
                     }
-                    PlotUtils myPlotter2 = new PlotUtils(new Prefs(prefs_), "Mean Values");
+                    PlotUtils myPlotter2 = new PlotUtils(prefs_);
                     XYSeries[] toPlot = new XYSeries[1];
                     toPlot[0] = trueAngles;
                     boolean[] showShapes = {false, false};
@@ -382,7 +380,7 @@ public class SAIMFrame extends javax.swing.JFrame {
                     jLabel7.setText("y = " + coeff1 + "* x^2 + " + coeff2 + "x + " + offset);
                     core_.setShutterOpen(false);
                 } catch (Exception ex) {
-                    ReportingUtils.logError(ex, "Ran until # " + i);
+                    ij.IJ.log(ex.getMessage() + "Ran until # " + i);
                 }
             }
         }

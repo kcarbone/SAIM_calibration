@@ -27,14 +27,12 @@ public class SAIM implements MMPlugin {
    public static String menuName = "SAIM";
    public static String tooltipDescription = "A plugin to control the special tool that measures the angle of light coming out of an objective. "
 		   + "Not very useful unless you have that nice little gadget.";
-   private CMMCore core_;
    private ScriptInterface gui_;
    private SAIMFrame myFrame_;
 
    @Override
    public void setApp(ScriptInterface app) {
-      gui_ = app;                                        
-      core_ = app.getMMCore();
+      gui_ = app;  
       if (myFrame_ == null)
          myFrame_ = new SAIMFrame(gui_);
       myFrame_.setVisible(true);
