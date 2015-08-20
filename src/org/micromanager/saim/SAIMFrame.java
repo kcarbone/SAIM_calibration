@@ -386,12 +386,9 @@ public class SAIMFrame extends javax.swing.JFrame {
 
     private void RunOffsetCalc() {
         final int zeroPos = Integer.parseInt(jTextField3.getText());
-        final String port = jComboBox1.getSelectedItem().toString();
-        final String deviceName = jComboBox2.getSelectedItem().toString();
-        final String propName = "Position";
+        takeSnapshot(zeroPos);
     }
     private void RunCalibration() {
-
         // Edit these variables
         final int startPosition = Integer.parseInt(jTextField4.getText());
         final int endPosition = Integer.parseInt(jTextField2.getText());
@@ -509,4 +506,63 @@ public class SAIMFrame extends javax.swing.JFrame {
         calThread calt = new calThread("SAIM Callibration");
         calt.start();
     }
+    public void takeSnapshot(int pos) {
+        int i = 0;
+        try {
+            final String port = jComboBox1.getSelectedItem().toString();
+            final String deviceName = jComboBox2.getSelectedItem().toString();
+            final String propName = "Position";
+            core_.setShutterOpen(true);
+            XYSeries dect1readings = new XYSeries(new Integer(1536), false, true);
+            XYSeries dect2readings = new XYSeries(new Integer(1536), false, true);
+            core_.setProperty(deviceName, propName, pos);
+            core_.waitForDevice(deviceName);
+            core_.setSerialPortCommand(port, "1", "");
+            gui_.message("Pos: " + pos);
+            for (i = 0; i < 1536; i++) {
+                //ReportingUtils.logMessage("" + i);
+                String answer = core_.getSerialPortAnswer(port, "\n");
+                //gui.message(i + "   " + answer);
+                String[] vals = answer.trim().split("\\t");
+                if (vals.length == 2) {
+                    int dect1px = Integer.valueOf(vals[0]);
+                    int dect2px = Integer.valueOf(vals[1]);
+                    dect1readings.add(i, dect1px);
+                    dect2readings.add(i, dect2px);
+                } else {
+                    System.out.println("Val is not 2: " + answer);
+                }
+            }
+            core_.getSerialPortAnswer(port, "\n");
+
+            //shuffle values of detector 1 to match physical layout of pixels
+            int size = dect1readings.getItemCount();
+            XYSeries dect1readingsFlip = new XYSeries(new Integer(size), false, true);
+            for (int a = 0; a < size; a++) {
+                Number pxvalue = dect1readings.getY(size - 1 - a);
+                dect1readingsFlip.add(a, pxvalue);
+            }
+
+            PlotUtils myPlotter = new PlotUtils(prefs_);
+            XYSeries[] toPlot = new XYSeries[2];
+            toPlot[0] = dect1readingsFlip;
+            toPlot[1] = dect2readings;
+            boolean[] showShapes = {false, false};
+            myPlotter.plotDataN("SAIM Scan", toPlot, "Pixel", "Intensity", showShapes, "Pos: " + pos);
+            //Fit result to a gaussian
+            double[] result1 = Fitter.fit(dect1readingsFlip, Fitter.FunctionType.Gaussian, null);
+            gui_.message("Dectector 1 Mean: " + result1[1] + "\n");
+            double[] result2 = Fitter.fit(dect2readings, Fitter.FunctionType.Gaussian, null);
+            gui_.message("Dectector 2 Mean: " + result2[1] + "\n");
+            //dect1gaussianMeans.add(pos, result1[1]);
+            //dect2gaussianMeans.add(pos, result2[1]);
+
+            Number offset = result1[1] - result2[1];
+            gui_.message("Detector offset: " + offset + "\n");
+            core_.setShutterOpen(false);
+        } catch (Exception ex) {
+            ij.IJ.log(ex.getMessage() + "Ran until # " + i);
+        }
+    }
+
 }
