@@ -1,21 +1,7 @@
 /**
- * A very simple Micro-Manager plugin
- * 
- * This plugin does nothing, its sole function is to make it easier for developers
- * to start writing Micro-Manager plugins.
- * 
- * Copy this code to a location of your choice, change the name of the project
- * (and the classes), build the jar file and copy it to the mmplugins folder
- * in your Micro-Manager directory.
- * 
- * Once you have it loaded and running, you can attach the NetBean debugger
- * and use all of NetBean's functionality to debug your code.  If you make a 
- * generally useful plugin, please do not hesitate to send a copy to
- * info@micro-managaer.org for inclusion in the Micro-Manager source code 
- * repository.
- * 
- * Nico Stuurman, 2012
- * copyright University of California
+ *
+ * Nico Stuurman, 2012, Kate Carbone 2015
+ * copyright Regents of the University of California
  *  
  * LICENSE:      This file is distributed under the BSD license.
  *               License text is included with the source distribution.
@@ -39,15 +25,14 @@ import org.micromanager.api.ScriptInterface;
 
 public class SAIM implements MMPlugin {
    public static String menuName = "SAIM";
-   public static String tooltipDescription = "This Micro-Manager plugin does nothing. "
-		   +"Its only purpose is to be an example for developers wishing to write their own plugin.";
-   private CMMCore core_;
+   public static String tooltipDescription = "A plugin to control the special tool that measures the angle of light coming out of an objective. "
+		   + "Not very useful unless you have that nice little gadget.";
    private ScriptInterface gui_;
    private SAIMFrame myFrame_;
 
+   @Override
    public void setApp(ScriptInterface app) {
-      gui_ = app;                                        
-      core_ = app.getMMCore();
+      gui_ = app;  
       if (myFrame_ == null)
          myFrame_ = new SAIMFrame(gui_);
       myFrame_.setVisible(true);
@@ -56,29 +41,35 @@ public class SAIM implements MMPlugin {
       gui_.addMMBackgroundListener(myFrame_);
    }
 
+   @Override
    public void dispose() {
       // nothing todo:
    }
 
+   @Override
    public void show() {
    }
 
    public void configurationChanged() {
    }
 
+   @Override
    public String getInfo () {
-      return "Example plugin";
+      return "Saim plugin";
    }
 
+   @Override
    public String getDescription() {
       return tooltipDescription;
    }
    
+   @Override
    public String getVersion() {
       return "1.0";
    }
    
+   @Override
    public String getCopyright() {
-      return "University of California, 2012";
+      return "Regents of the University of California, 2015";
    }
 }
