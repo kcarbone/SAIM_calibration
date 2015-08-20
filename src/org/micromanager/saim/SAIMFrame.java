@@ -75,7 +75,10 @@ public class SAIMFrame extends javax.swing.JFrame {
         jTextField2.setText("41000");
         //Number of Calibration Points
         jTextField1.setText("100");
+        //Set toggle button to run (vs. "Abort")
+        jToggleButton1.setText("Run");
         jLabel7.setText("");
+        jLabel15.setText("");
         //Calibration Output
         StrVector serialPorts = core_.getLoadedDevicesOfType(DeviceType.SerialDevice);
         for (int i = 0; i < serialPorts.size(); i++) {
@@ -113,7 +116,6 @@ public class SAIMFrame extends javax.swing.JFrame {
         jLabel5 = new javax.swing.JLabel();
         jLabel6 = new javax.swing.JLabel();
         jTextField4 = new javax.swing.JTextField();
-        OKButton_ = new javax.swing.JButton();
         jLabel7 = new javax.swing.JLabel();
         jTextField1 = new javax.swing.JTextField();
         jLabel8 = new javax.swing.JLabel();
@@ -125,6 +127,9 @@ public class SAIMFrame extends javax.swing.JFrame {
         jLabel12 = new javax.swing.JLabel();
         jLabel13 = new javax.swing.JLabel();
         OKButton_1 = new javax.swing.JButton();
+        jLabel14 = new javax.swing.JLabel();
+        jLabel15 = new javax.swing.JLabel();
+        jToggleButton1 = new javax.swing.JToggleButton();
 
         setTitle("SAIM Plugin");
         setLocationByPlatform(true);
@@ -161,14 +166,6 @@ public class SAIMFrame extends javax.swing.JFrame {
         jLabel6.setText("Polynomial Fit: ");
 
         jTextField4.setText("jTextField4");
-
-        OKButton_.setText("OK");
-        OKButton_.setAlignmentX(0.5F);
-        OKButton_.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                OKButton_ActionPerformed(evt);
-            }
-        });
 
         jLabel7.setText("jLabel7");
         jLabel7.setAutoscrolls(true);
@@ -208,6 +205,17 @@ public class SAIMFrame extends javax.swing.JFrame {
             }
         });
 
+        jLabel14.setText("Detector Offset:");
+
+        jLabel15.setText("jLabel15");
+
+        jToggleButton1.setText("jToggleButton1");
+        jToggleButton1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jToggleButton1ActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -228,8 +236,7 @@ public class SAIMFrame extends javax.swing.JFrame {
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                             .addGroup(layout.createSequentialGroup()
                                 .addComponent(jLabel2)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 207, Short.MAX_VALUE)
-                                .addComponent(OKButton_))
+                                .addGap(0, 0, Short.MAX_VALUE))
                             .addGroup(layout.createSequentialGroup()
                                 .addComponent(jLabel6, javax.swing.GroupLayout.PREFERRED_SIZE, 123, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -254,6 +261,10 @@ public class SAIMFrame extends javax.swing.JFrame {
                                     .addComponent(jTextField1, javax.swing.GroupLayout.Alignment.TRAILING)
                                     .addComponent(jTextField4, javax.swing.GroupLayout.DEFAULT_SIZE, 115, Short.MAX_VALUE)))
                             .addGroup(layout.createSequentialGroup()
+                                .addComponent(jLabel13)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .addComponent(OKButton_1))
+                            .addGroup(layout.createSequentialGroup()
                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                                     .addComponent(jLabel5)
                                     .addComponent(jLabel9))
@@ -261,14 +272,16 @@ public class SAIMFrame extends javax.swing.JFrame {
                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                     .addComponent(jComboBox1, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                                     .addComponent(jComboBox2, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
-                            .addGroup(layout.createSequentialGroup()
-                                .addComponent(jLabel13)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                .addComponent(OKButton_1)))
+                            .addComponent(jToggleButton1, javax.swing.GroupLayout.Alignment.TRAILING))
                         .addGap(40, 40, 40))
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                         .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 159, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(134, 134, 134))))
+                        .addGap(134, 134, 134))
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(jLabel14)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(jLabel15)
+                        .addGap(87, 87, 87))))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -294,6 +307,10 @@ public class SAIMFrame extends javax.swing.JFrame {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel13)
                     .addComponent(OKButton_1))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel14)
+                    .addComponent(jLabel15))
                 .addGap(20, 20, 20)
                 .addComponent(jLabel11)
                 .addGap(10, 10, 10)
@@ -311,8 +328,8 @@ public class SAIMFrame extends javax.swing.JFrame {
                 .addGap(5, 5, 5)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel2)
-                    .addComponent(OKButton_))
-                .addGap(5, 5, 5)
+                    .addComponent(jToggleButton1))
+                .addGap(39, 39, 39)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel6)
                     .addComponent(jLabel7))
@@ -349,19 +366,22 @@ public class SAIMFrame extends javax.swing.JFrame {
         // TODO add your handling code here:
     }//GEN-LAST:event_jComboBox2ActionPerformed
 
-    private void OKButton_ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_OKButton_ActionPerformed
-        // TODO add your handling code here:
-        RunCalibration();
-    }//GEN-LAST:event_OKButton_ActionPerformed
-
     private void OKButton_1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_OKButton_1ActionPerformed
         // TODO add your handling code here:
         RunOffsetCalc();
     }//GEN-LAST:event_OKButton_1ActionPerformed
 
+    private void jToggleButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jToggleButton1ActionPerformed
+        // TODO add your handling code here:
+        if (jToggleButton1.isSelected()) {
+            jToggleButton1.setText("Abort");
+            RunCalibration();
+        } else {
+            jToggleButton1.setText("Run");
+        }
+    }//GEN-LAST:event_jToggleButton1ActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton OKButton_;
     private javax.swing.JButton OKButton_1;
     private javax.swing.JComboBox jComboBox1;
     private javax.swing.JComboBox jComboBox2;
@@ -370,6 +390,8 @@ public class SAIMFrame extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel11;
     private javax.swing.JLabel jLabel12;
     private javax.swing.JLabel jLabel13;
+    private javax.swing.JLabel jLabel14;
+    private javax.swing.JLabel jLabel15;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
@@ -382,11 +404,17 @@ public class SAIMFrame extends javax.swing.JFrame {
     private javax.swing.JTextField jTextField2;
     private javax.swing.JTextField jTextField3;
     private javax.swing.JTextField jTextField4;
+    private javax.swing.JToggleButton jToggleButton1;
     // End of variables declaration//GEN-END:variables
 
     private void RunOffsetCalc() {
         final int zeroPos = Integer.parseInt(jTextField3.getText());
-        takeSnapshot(zeroPos);
+        detectorMeans offsetVal = takeSnapshot(zeroPos);
+        if (offsetVal != null) {
+            Number offset = offsetVal.getDect1() - offsetVal.getDect2();
+            ij.IJ.log("Detector offset: " + offset + "\n");
+            jLabel15.setText("" + offset);
+        }
     }
     private void RunCalibration() {
         // Edit these variables
@@ -418,7 +446,7 @@ public class SAIMFrame extends javax.swing.JFrame {
                         core_.setProperty(deviceName, propName, pos);
                         core_.waitForDevice(deviceName);
                         core_.setSerialPortCommand(port, "1", "");
-                        gui_.message("Image: " + angle + ", Pos: " + pos);
+                        ij.IJ.log("Image: " + angle + ", Pos: " + pos);
                         for (i = 0; i < 1536; i++) {
                             //ReportingUtils.logMessage("" + i);
                             String answer = core_.getSerialPortAnswer(port, "\n");
@@ -468,12 +496,19 @@ public class SAIMFrame extends javax.swing.JFrame {
                         myPlotter.plotDataN("SAIM Scan", toPlot, "Pixel", "Intensity", showShapes, "Pos: " + pos);
                         //Fit result to a gaussian
                         double[] result1 = Fitter.fit(dect1readingsFlip, Fitter.FunctionType.Gaussian, null);
-                        gui_.message("Dectector 1 Mean: " + result1[1] + "\n");
+                        ij.IJ.log("Dectector 1 Mean: " + result1[1] + "\n");
                         double[] result2 = Fitter.fit(dect2readingsFlip, Fitter.FunctionType.Gaussian, null);
-                        gui_.message("Dectector 2 Mean: " + result2[1] + "\n");
+                        ij.IJ.log("Dectector 2 Mean: " + result2[1] + "\n");
                         dect1gaussianMeans.add(pos, result1[1]);
                         dect2gaussianMeans.add(pos, result2[1]);
                         pos = pos + angleStepSize;
+                        if (jToggleButton1.isSelected()) {
+                        } else {
+                            core_.setShutterOpen(false);
+                            jToggleButton1.setText("Run");
+                            jToggleButton1.setSelected(false);
+                            break;
+                        }
                     }
                     XYSeries trueAngles = new XYSeries(new Integer(nrAngles), false, true);
                     for (int l = 0; l <= nrAngles; l++) {
@@ -498,6 +533,8 @@ public class SAIMFrame extends javax.swing.JFrame {
                     String offset = new DecimalFormat("#.##").format(calCurve[2]); 
                     jLabel7.setText("y = " + coeff1 + "* x^2 + " + coeff2 + "x + " + offset);
                     core_.setShutterOpen(false);
+                    jToggleButton1.setText("Run");
+                    jToggleButton1.setSelected(false);
                 } catch (Exception ex) {
                     ij.IJ.log(ex.getMessage() + "Ran until # " + i);
                 }
@@ -506,7 +543,27 @@ public class SAIMFrame extends javax.swing.JFrame {
         calThread calt = new calThread("SAIM Callibration");
         calt.start();
     }
-    public void takeSnapshot(int pos) {
+    
+    //
+    final class detectorMeans {
+        private final double dect1;
+        private final double dect2;
+
+        public detectorMeans(double dect1, double dect2) {
+            this.dect1 = dect1;
+            this.dect2 = dect2;
+        }
+
+        public double getDect1() {
+            return dect1;
+        }
+
+        public double getDect2() {
+            return dect2;
+        }
+    }
+    //main class code
+    public detectorMeans takeSnapshot(int pos) {
         int i = 0;
         try {
             final String port = jComboBox1.getSelectedItem().toString();
@@ -518,11 +575,10 @@ public class SAIMFrame extends javax.swing.JFrame {
             core_.setProperty(deviceName, propName, pos);
             core_.waitForDevice(deviceName);
             core_.setSerialPortCommand(port, "1", "");
-            gui_.message("Pos: " + pos);
+            ij.IJ.log("Pos: " + pos);
             for (i = 0; i < 1536; i++) {
                 //ReportingUtils.logMessage("" + i);
                 String answer = core_.getSerialPortAnswer(port, "\n");
-                //gui.message(i + "   " + answer);
                 String[] vals = answer.trim().split("\\t");
                 if (vals.length == 2) {
                     int dect1px = Integer.valueOf(vals[0]);
@@ -534,7 +590,7 @@ public class SAIMFrame extends javax.swing.JFrame {
                 }
             }
             core_.getSerialPortAnswer(port, "\n");
-
+            core_.setShutterOpen(false);
             //shuffle values of detector 1 to match physical layout of pixels
             int size = dect1readings.getItemCount();
             XYSeries dect1readingsFlip = new XYSeries(new Integer(size), false, true);
@@ -551,18 +607,14 @@ public class SAIMFrame extends javax.swing.JFrame {
             myPlotter.plotDataN("SAIM Scan", toPlot, "Pixel", "Intensity", showShapes, "Pos: " + pos);
             //Fit result to a gaussian
             double[] result1 = Fitter.fit(dect1readingsFlip, Fitter.FunctionType.Gaussian, null);
-            gui_.message("Dectector 1 Mean: " + result1[1] + "\n");
+            ij.IJ.log("Dectector 1 Mean: " + result1[1] + "\n");
             double[] result2 = Fitter.fit(dect2readings, Fitter.FunctionType.Gaussian, null);
-            gui_.message("Dectector 2 Mean: " + result2[1] + "\n");
-            //dect1gaussianMeans.add(pos, result1[1]);
-            //dect2gaussianMeans.add(pos, result2[1]);
-
-            Number offset = result1[1] - result2[1];
-            gui_.message("Detector offset: " + offset + "\n");
-            core_.setShutterOpen(false);
+            ij.IJ.log("Dectector 2 Mean: " + result2[1] + "\n");
+            detectorMeans output = new detectorMeans(result1[1], result2[1]);
+            return output;
         } catch (Exception ex) {
             ij.IJ.log(ex.getMessage() + "Ran until # " + i);
         }
+    return null;
     }
-
 }
