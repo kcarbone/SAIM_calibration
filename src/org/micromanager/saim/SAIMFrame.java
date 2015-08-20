@@ -77,8 +77,8 @@ public class SAIMFrame extends javax.swing.JFrame {
         jTextField1.setText("100");
         //Set toggle button to run (vs. "Abort")
         jToggleButton1.setText("Run");
-        jLabel7.setText("");
-        jLabel15.setText("");
+        jLabel7.setText(null);
+        jLabel15.setText(null);
         //Calibration Output
         StrVector serialPorts = core_.getLoadedDevicesOfType(DeviceType.SerialDevice);
         for (int i = 0; i < serialPorts.size(); i++) {
@@ -411,7 +411,7 @@ public class SAIMFrame extends javax.swing.JFrame {
         final int zeroPos = Integer.parseInt(jTextField3.getText());
         detectorMeans offsetVal = takeSnapshot(zeroPos);
         if (offsetVal != null) {
-            Number offset = offsetVal.getDect1() - offsetVal.getDect2();
+            Double offset = offsetVal.getDect1() - offsetVal.getDect2();
             ij.IJ.log("Detector offset: " + offset + "\n");
             jLabel15.setText("" + offset);
         }
@@ -436,8 +436,9 @@ public class SAIMFrame extends javax.swing.JFrame {
             public void run() {
                 int i = 0;
                 try {
-                    XYSeries dect1gaussianMeans = new XYSeries(new Integer(nrAngles), false, true);
-                    XYSeries dect2gaussianMeans = new XYSeries(new Integer(nrAngles), false, true);
+                    //Take image of laser position
+                    XYSeries dect1gaussianMeans = new XYSeries(new Double(nrAngles), false, true);
+                    XYSeries dect2gaussianMeans = new XYSeries(new Double(nrAngles), false, true);
                     core_.setShutterOpen(true);
                     int pos = startPosition;
                     for (int angle = 0; angle <= nrAngles; angle++) {
@@ -448,16 +449,23 @@ public class SAIMFrame extends javax.swing.JFrame {
                                 pos = pos + angleStepSize;
                             }
                     }
-                    XYSeries trueAngles = new XYSeries(new Integer(nrAngles), false, true);
+                    //Read offset if calculated
+                    Double detectorOffset;
+                    if ((jLabel15.getText()) != null){
+                        detectorOffset = Double.parseDouble(jLabel15.getText());
+                    } else { detectorOffset = 0.0;
+                    }
+                    //Determine True angle of laser light at each motor position
+                    XYSeries trueAngles = new XYSeries(new Double(nrAngles), false, true);
                     for (int l = 0; l <= nrAngles; l++) {
-                        Number angle = dect1gaussianMeans.getX(l);
-                        Number dect1val = dect1gaussianMeans.getY(l);
-                        Number dect2val = dect2gaussianMeans.getY(l);
+                        Double angle = dect1gaussianMeans.getX(l).doubleValue();
+                        Double dect1val = dect1gaussianMeans.getY(l).doubleValue();
+                        Double dect2val = dect2gaussianMeans.getY(l).doubleValue() + detectorOffset;
                         //pixel center to center distance is 63.5 um
                         double xdisp = (dect1val.floatValue() - dect2val.floatValue())*0.0635;
                         //detector1 center to detector2 center is 20.64 mm
                         double ydisp = 20.64;
-                        Number trueAngle = Math.toDegrees(Math.atan(xdisp/ydisp));
+                        Double trueAngle = Math.toDegrees(Math.atan(xdisp/ydisp));
                         trueAngles.add(angle, trueAngle);
                     }
                     PlotUtils myPlotter2 = new PlotUtils(prefs_);
