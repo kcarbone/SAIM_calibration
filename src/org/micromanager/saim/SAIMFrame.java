@@ -436,79 +436,17 @@ public class SAIMFrame extends javax.swing.JFrame {
             public void run() {
                 int i = 0;
                 try {
-                    core_.setShutterOpen(true);
                     XYSeries dect1gaussianMeans = new XYSeries(new Integer(nrAngles), false, true);
                     XYSeries dect2gaussianMeans = new XYSeries(new Integer(nrAngles), false, true);
+                    core_.setShutterOpen(true);
                     int pos = startPosition;
                     for (int angle = 0; angle <= nrAngles; angle++) {
-                        XYSeries dect1readings = new XYSeries(new Integer(1536), false, true);
-                        XYSeries dect2readings = new XYSeries(new Integer(1536), false, true);
-                        core_.setProperty(deviceName, propName, pos);
-                        core_.waitForDevice(deviceName);
-                        core_.setSerialPortCommand(port, "1", "");
-                        ij.IJ.log("Image: " + angle + ", Pos: " + pos);
-                        for (i = 0; i < 1536; i++) {
-                            //ReportingUtils.logMessage("" + i);
-                            String answer = core_.getSerialPortAnswer(port, "\n");
-                            //gui.message(i + "   " + answer);
-                            String[] vals = answer.trim().split("\\t");
-                            if (vals.length == 2) {
-                                int dect1px = Integer.valueOf(vals[0]);
-                                int dect2px = Integer.valueOf(vals[1]);
-                                dect1readings.add(i, dect1px);
-                                dect2readings.add(i, dect2px);
-                            } else
-                                System.out.println("Val is not 2: " + answer);
-                        }
-                        core_.getSerialPortAnswer(port, "\n");
-                        
-                        //shuffle pixels to match physical layout of detectors
-                        int size = dect1readings.getItemCount();
-                        XYSeries dect1readingsFlip = new XYSeries(new Integer(size), false, true);
-                        //dect1readingsFlip = dect1readings;
-                        for (int a = 0; a < size; a++) {
-                            //there is a problem with the size of dect1readings
-                            Number pxvalue = dect1readings.getY(size - 1 - a);
-                            dect1readingsFlip.add(a, pxvalue);
-                        }
-                        int size2 = dect2readings.getItemCount();
-                        int halfSize = size2 / 2;
-                        XYSeries dect2readingsFlip = new XYSeries(new Float(size), false, true);
-                        //dect2readingsFlip = dect2readings;
-                        //original code for dect2readingsFlip:
-                        for (int j = 0; j < halfSize; j++) {
-                            Number pxvalue = dect2readings.getY(halfSize - 1 - j);
-                            dect2readingsFlip.add(j*1, pxvalue);
-                        }
-                        for (int k = 0; k < halfSize; k++) {
-                            Number pxvalue = dect2readings.getY(halfSize + k);
-                            dect2readingsFlip.add((halfSize + k)*1, pxvalue);
-                        }
-                        //reverse transposition for debugging
-                        dect2readingsFlip = dect2readings;
-                        
-                        PlotUtils myPlotter = new PlotUtils(prefs_);
-                        XYSeries[] toPlot = new XYSeries[2];
-                        toPlot[0] = dect1readingsFlip;
-                        //toPlot[0] = dect2readings;
-                        toPlot[1] = dect2readingsFlip;
-                        boolean[] showShapes = {false, false};
-                        myPlotter.plotDataN("SAIM Scan", toPlot, "Pixel", "Intensity", showShapes, "Pos: " + pos);
-                        //Fit result to a gaussian
-                        double[] result1 = Fitter.fit(dect1readingsFlip, Fitter.FunctionType.Gaussian, null);
-                        ij.IJ.log("Dectector 1 Mean: " + result1[1] + "\n");
-                        double[] result2 = Fitter.fit(dect2readingsFlip, Fitter.FunctionType.Gaussian, null);
-                        ij.IJ.log("Dectector 2 Mean: " + result2[1] + "\n");
-                        dect1gaussianMeans.add(pos, result1[1]);
-                        dect2gaussianMeans.add(pos, result2[1]);
-                        pos = pos + angleStepSize;
-                        if (jToggleButton1.isSelected()) {
-                        } else {
-                            core_.setShutterOpen(false);
-                            jToggleButton1.setText("Run");
-                            jToggleButton1.setSelected(false);
-                            break;
-                        }
+                        detectorMeans laserPos = takeSnapshot(pos);
+                            if (laserPos != null) {
+                                dect1gaussianMeans.add(pos, laserPos.getDect1());
+                                dect2gaussianMeans.add(pos, laserPos.getDect2());
+                                pos = pos + angleStepSize;
+                            }
                     }
                     XYSeries trueAngles = new XYSeries(new Integer(nrAngles), false, true);
                     for (int l = 0; l <= nrAngles; l++) {
