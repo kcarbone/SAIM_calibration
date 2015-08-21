@@ -68,11 +68,11 @@ public class SAIMFrame extends javax.swing.JFrame {
 
         initComponents();
         //Guess Zero Motor Position
-        jTextField3.setText("30000");
+        jTextField3.setText("31640");
         //Start Motor Position
-        jTextField4.setText("22000");
+        jTextField4.setText("19880");
         //End Motor Position
-        jTextField2.setText("41000");
+        jTextField2.setText("42420");
         //Number of Calibration Points
         jTextField1.setText("100");
         //Set toggle button to run (vs. "Abort")
@@ -544,8 +544,8 @@ public class SAIMFrame extends javax.swing.JFrame {
             final String deviceName = jComboBox2.getSelectedItem().toString();
             final String propName = "Position";
             //Initialize xyseries to collect pixel intensity values
-            XYSeries dect1readings = new XYSeries("upper", false, true);
-            XYSeries dect2readings = new XYSeries("lower", false, true);
+            XYSeries dect1readings = new XYSeries("lower", false, true);
+            XYSeries dect2readings = new XYSeries("upper", false, true);
             //Set motor position
             core_.setProperty(deviceName, propName, pos);
             core_.waitForDevice(deviceName);
@@ -568,7 +568,7 @@ public class SAIMFrame extends javax.swing.JFrame {
 
             //shuffle values of detector 1 to match physical layout of pixels
             int size = dect1readings.getItemCount();
-            XYSeries dect1readingsFlip = new XYSeries("upper", false, true);
+            XYSeries dect1readingsFlip = new XYSeries("lower", false, true);
             for (int a = 0; a < size; a++) {
                 Number pxvalue = dect1readings.getY(size - 1 - a);
                 dect1readingsFlip.add(a, pxvalue);
