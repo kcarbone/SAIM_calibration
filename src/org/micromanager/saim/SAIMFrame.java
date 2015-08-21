@@ -564,7 +564,6 @@ public class SAIMFrame extends javax.swing.JFrame {
                     System.out.println("Val is not 2: " + answer);
                 }
             }
-            core_.getSerialPortAnswer(port, "\n");
 
             //shuffle values of detector 1 to match physical layout of pixels
             int size = dect1readings.getItemCount();
