@@ -114,7 +114,8 @@ public class Fitter {
     */
    public static XYSeries getFittedSeries(XYSeries data, FunctionType type, 
            double[] parms) {
-      XYSeries result = new XYSeries(data.getItemCount() * 10);
+      
+      XYSeries result = new XYSeries((String) data.getKey() + "-Fit", false, true);
       double minRange = data.getMinX();
       double maxRange = data.getMaxX();
       double xStep = (maxRange - minRange) / (data.getItemCount() * 10);
