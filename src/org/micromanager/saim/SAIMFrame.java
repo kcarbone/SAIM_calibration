@@ -70,9 +70,9 @@ public class SAIMFrame extends javax.swing.JFrame {
         //Guess Zero Motor Position
         jTextField3.setText("31640");
         //Start Motor Position
-        jTextField4.setText("19880");
+        jTextField4.setText("20500");
         //End Motor Position
-        jTextField2.setText("42420");
+        jTextField2.setText("42500");
         //Number of Calibration Points
         jTextField1.setText("100");
         //Set toggle button to run (vs. "Abort")
@@ -486,17 +486,18 @@ public class SAIMFrame extends javax.swing.JFrame {
                     }
                     //Plot calibration curve
                     PlotUtils myPlotter2 = new PlotUtils(prefs_);
-                    double[] calCurve = Fitter.fit(observedAngles, Fitter.FunctionType.Pol2, null);
+                    double[] calCurve = Fitter.fit(observedAngles, Fitter.FunctionType.Pol3, null);
                     XYSeries[] toPlot = new XYSeries[2];
                     toPlot[0] = observedAngles;
-                    toPlot[1] = Fitter.getFittedSeries(toPlot[0], Fitter.FunctionType.Pol2, calCurve);
+                    toPlot[1] = Fitter.getFittedSeries(toPlot[0], Fitter.FunctionType.Pol3, calCurve);
                     boolean[] showShapes = {true, false};
                     myPlotter2.plotDataN("Calibration Curve", toPlot, "Position", "True Angle", showShapes, "");
 
                     String coeff1 = new DecimalFormat("#.##").format(calCurve[0]);
                     String coeff2 = new DecimalFormat("#.##").format(calCurve[1]);
-                    String offset = new DecimalFormat("#.##").format(calCurve[2]);
-                    jLabel7.setText("y = " + coeff1 + "* x^2 + " + coeff2 + "x + " + offset);
+                    String coeff3 = new DecimalFormat("#.##").format(calCurve[2]);
+                    String offset = new DecimalFormat("#.##").format(calCurve[3]);
+                    jLabel7.setText("y = " + coeff1 + "* x^3 + " + coeff2 + "* x^2 + " + coeff3 + "x + " + offset);
 
                 } catch (Exception ex) {
                     ex.printStackTrace();
