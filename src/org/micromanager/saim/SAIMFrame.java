@@ -469,7 +469,7 @@ public class SAIMFrame extends javax.swing.JFrame {
                         detectorOffset = 0.0;
                     }
                     //Determine angle of laser light at each motor position
-                    XYSeries trueAngles = new XYSeries("angles", false, true);
+                    XYSeries observedAngles = new XYSeries("angles", false, true);
                     for (int l = 0; l <= nrAngles; l++) {
                         Double motorPosition = dect1gaussianMeans.getX(l).doubleValue();
                         Double dect1val = dect1gaussianMeans.getY(l).doubleValue();
@@ -478,16 +478,17 @@ public class SAIMFrame extends javax.swing.JFrame {
                         double xdisp = (dect1val.floatValue() - dect2val.floatValue()) * 0.0635;
                         //detector1 center to detector2 center is 20.64 mm
                         double ydisp = 20.64;
-                        Double trueAngle = Math.toDegrees(Math.atan(xdisp / ydisp));
-                        trueAngles.add(motorPosition, trueAngle);
+                        Double observedAngle = Math.toDegrees(Math.atan(xdisp / ydisp));
+                        //Snells law correction angle of laser light for refractive index 
+                        //Refractive indeces: glass, oil, acrylic = 1.5, water = 1.33
+                        Double trueAngle = Math.toDegrees(Math.asin((1.5/1.33)*Math.sin(Math.toRadians(observedAngle))));
+                        observedAngles.add(motorPosition, trueAngle);
                     }
-                    //Snells law correction angle of laser light for refractive index
-
                     //Plot calibration curve
                     PlotUtils myPlotter2 = new PlotUtils(prefs_);
-                    double[] calCurve = Fitter.fit(trueAngles, Fitter.FunctionType.Pol2, null);
+                    double[] calCurve = Fitter.fit(observedAngles, Fitter.FunctionType.Pol2, null);
                     XYSeries[] toPlot = new XYSeries[2];
-                    toPlot[0] = trueAngles;
+                    toPlot[0] = observedAngles;
                     toPlot[1] = Fitter.getFittedSeries(toPlot[0], Fitter.FunctionType.Pol2, calCurve);
                     boolean[] showShapes = {true, false};
                     myPlotter2.plotDataN("Calibration Curve", toPlot, "Position", "True Angle", showShapes, "");
