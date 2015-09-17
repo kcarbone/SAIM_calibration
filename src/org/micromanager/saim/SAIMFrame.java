@@ -70,9 +70,9 @@ public class SAIMFrame extends javax.swing.JFrame {
         //Guess Zero Motor Position
         jTextField3.setText("31640");
         //Start Motor Position
-        jTextField4.setText("20500");
+        jTextField4.setText("13000");
         //End Motor Position
-        jTextField2.setText("42500");
+        jTextField2.setText("50000");
         //Number of Calibration Points
         jTextField1.setText("100");
         //refractive index of immersion media
