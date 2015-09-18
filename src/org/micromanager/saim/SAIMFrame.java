@@ -60,7 +60,6 @@ public class SAIMFrame extends MMFrame {
     private static final String FRAMEYPOS = "FRAMEYPOS";
     
     private final JTabbedPane tabbedPane_;
-    private final JPanel calibrationPanel_;
 
     /**
      * Constructor
@@ -75,13 +74,21 @@ public class SAIMFrame extends MMFrame {
         prefs_ = Preferences.userNodeForPackage(this.getClass());
 
         this.setLayout(new MigLayout("flowx, fill, insets 8"));
-        this.setTitle("MicroNuclei Analyze");
+        this.setTitle("SAIM calibration");
         
         tabbedPane_ = new JTabbedPane();
-        calibrationPanel_ = new CalibrationPanel(gui_, prefs_);
         
+        tabbedPane_.add(new CalibrationPanel(gui_, prefs_));
+        tabbedPane_.add(new FlatFieldPanel(gui_, prefs_));
+        tabbedPane_.add(new AcquisitionPanel(gui_, prefs_));
         
-        // initComponents();
+        this.add(tabbedPane_);
+        this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+        this.setResizable(false);
+        this.setVisible(true);
+        pack();
+        /*
+        initComponents();
         //Guess Zero Motor Position
         jTextField3.setText("31640");
         //Start Motor Position
@@ -114,7 +121,7 @@ public class SAIMFrame extends MMFrame {
         setLocation(frameXPos_, frameYPos_);
 
         setBackground(gui_.getBackgroundColor());
-
+*/
     }
 
     /**
