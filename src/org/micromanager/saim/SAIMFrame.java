@@ -513,10 +513,10 @@ public class SAIMFrame extends javax.swing.JFrame {
                         Double observedAngle = Math.toDegrees(Math.atan(xdisp / ydisp));
                         //Snells law correction angle of laser light for refractive index 
                         //Refractive indeces: acrylic = 1.49, water = 1.33, user input = RI
-                        //determine true angle coming out of objective (correct for acryllic)
                         double immersionRI = Double.parseDouble(jTextField5.getText());
                         double sampleRI = Double.parseDouble(jTextField6.getText());
-                        Double firstCorrect = snellIt(observedAngle, immersionRI, 1.49);
+                        //determine true angle in immersion media (correct for acryllic)
+                        Double firstCorrect = snellIt(observedAngle, 1.49, immersionRI);
                         //determine true angle hitting the sample (correct for water/buffer)
                         Double trueAngle = snellIt(firstCorrect, immersionRI, sampleRI);
                         observedAngles.add(trueAngle, motorPosition);
@@ -528,7 +528,7 @@ public class SAIMFrame extends javax.swing.JFrame {
                     toPlot[0] = observedAngles;
                     toPlot[1] = Fitter.getFittedSeries(toPlot[0], Fitter.FunctionType.Pol3, calCurve);
                     boolean[] showShapes = {true, false};
-                    myPlotter2.plotDataN("Calibration Curve", toPlot, "Position", "True Angle", showShapes, "");
+                    myPlotter2.plotDataN("Calibration Curve", toPlot, "True Angle", "Motor Position", showShapes, "");
 
                     String coeff1 = new DecimalFormat("0.##E0").format(calCurve[3]);
                     String coeff2 = new DecimalFormat("0.##E0").format(calCurve[2]);
