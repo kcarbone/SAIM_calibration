@@ -36,12 +36,16 @@ import mmcorej.StrVector;
 import org.micromanager.saim.fit.Fitter;
 import org.micromanager.saim.plot.PlotUtils;
 import java.text.DecimalFormat;
+import javax.swing.JPanel;
+import javax.swing.JTabbedPane;
+import net.miginfocom.swing.MigLayout;
+import org.micromanager.utils.MMFrame;
 
 /**
  *
  * @author nico
  */
-public class SAIMFrame extends javax.swing.JFrame {
+public class SAIMFrame extends MMFrame {
 
     private final ScriptInterface gui_;
     private final CMMCore core_;
@@ -54,6 +58,9 @@ public class SAIMFrame extends javax.swing.JFrame {
 
     private static final String FRAMEXPOS = "FRAMEXPOS";
     private static final String FRAMEYPOS = "FRAMEYPOS";
+    
+    private final JTabbedPane tabbedPane_;
+    private final JPanel calibrationPanel_;
 
     /**
      * Constructor
@@ -64,9 +71,17 @@ public class SAIMFrame extends javax.swing.JFrame {
         gui_ = gui;
         core_ = gui_.getMMCore();
         nf_ = NumberFormat.getInstance();
+        loadAndRestorePosition(100, 100, 200, 200);
         prefs_ = Preferences.userNodeForPackage(this.getClass());
 
-        initComponents();
+        this.setLayout(new MigLayout("flowx, fill, insets 8"));
+        this.setTitle("MicroNuclei Analyze");
+        
+        tabbedPane_ = new JTabbedPane();
+        calibrationPanel_ = new CalibrationPanel(gui_, prefs_);
+        
+        
+        // initComponents();
         //Guess Zero Motor Position
         jTextField3.setText("31640");
         //Start Motor Position
