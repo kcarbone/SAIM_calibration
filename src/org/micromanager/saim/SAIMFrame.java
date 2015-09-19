@@ -1,49 +1,42 @@
+ ///////////////////////////////////////////////////////////////////////////////
+ //FILE:          SAIMFrame.java
+ //PROJECT:       SAIM-calibration
+ //-----------------------------------------------------------------------------
+ //
+ // AUTHOR:       Nico Stuurman, Kate Carbone
+ //
+ // COPYRIGHT:    University of California, San Francisco 2015
+ //
+ // LICENSE:      This file is distributed under the BSD license.
+ //               License text is included with the source distribution.
+ //
+ //               This file is distributed in the hope that it will be useful,
+ //               but WITHOUT ANY WARRANTY; without even the implied warranty
+ //               of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ //
+ //               IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+ //               CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ //               INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES.
+
+
 /**
- * SAIMFrame.java
- *
- *
  * This is a Micro-Manager plugin for using a Scanning Angle Interference
  * Microscopy calibration device. This specific example uses the NetBeans GUI
  * builder. It is based on ExampleFrame.java
  *
- *
- * Nico Stuurman, copyright Regents of the University of California, 2012 Kate
- * Carbone, 2015
- *
- * LICENSE: This file is distributed under the BSD license. License text is
- * included with the source distribution.
- *
- * This file is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE.
- *
- * IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY
- * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES.
  */
 package org.micromanager.saim;
 
 import mmcorej.CMMCore;
-
-import java.text.NumberFormat;
-
 import java.util.prefs.Preferences;
-
 import org.micromanager.api.ScriptInterface;
-
-import org.jfree.data.xy.XYSeries;
-import mmcorej.DeviceType;
-import mmcorej.StrVector;
-import org.micromanager.saim.fit.Fitter;
-import org.micromanager.saim.plot.PlotUtils;
-import java.text.DecimalFormat;
-import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import net.miginfocom.swing.MigLayout;
 import org.micromanager.utils.MMFrame;
 
 /**
  *
- * @author nico
+ * @author nico, kate
  */
 public class SAIMFrame extends MMFrame {
 
@@ -51,618 +44,33 @@ public class SAIMFrame extends MMFrame {
     private final CMMCore core_;
     private final Preferences prefs_;
 
-    private final NumberFormat nf_;
-
-    private final int frameXPos_ = 100;
-    private final int frameYPos_ = 100;
-
-    private static final String FRAMEXPOS = "FRAMEXPOS";
-    private static final String FRAMEYPOS = "FRAMEYPOS";
-    
     private final JTabbedPane tabbedPane_;
 
     /**
      * Constructor
      *
      * @param gui - Reference to MM script interface
-     */
-    public SAIMFrame(ScriptInterface gui) {
-        gui_ = gui;
-        core_ = gui_.getMMCore();
-        nf_ = NumberFormat.getInstance();
-        loadAndRestorePosition(100, 100, 200, 200);
-        prefs_ = Preferences.userNodeForPackage(this.getClass());
+    */
+   public SAIMFrame(ScriptInterface gui) {
+      gui_ = gui;
+      core_ = gui_.getMMCore();
+      loadAndRestorePosition(100, 100, 200, 200);
+      prefs_ = Preferences.userNodeForPackage(this.getClass());
 
-        this.setLayout(new MigLayout("flowx, fill, insets 8"));
-        this.setTitle("SAIM calibration");
-        
-        tabbedPane_ = new JTabbedPane();
-        
-        tabbedPane_.add(new CalibrationPanel(gui_, prefs_));
-        tabbedPane_.add(new FlatFieldPanel(gui_, prefs_));
-        tabbedPane_.add(new AcquisitionPanel(gui_, prefs_));
-        
-        this.add(tabbedPane_);
-        this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-        this.setResizable(false);
-        this.setVisible(true);
-        pack();
-        /*
-        initComponents();
-        //Guess Zero Motor Position
-        jTextField3.setText("31640");
-        //Start Motor Position
-        jTextField4.setText("13000");
-        //End Motor Position
-        jTextField2.setText("50000");
-        //Number of Calibration Points
-        jTextField1.setText("100");
-        //refractive index of immersion media
-        jTextField5.setText("1.33");
-        //refractive index of sample 
-        jTextField6.setText("1.36");
-        //Set toggle button to run (vs. "Abort")
-        jToggleButton1.setText("Run");
-        jLabel7.setText(null);
-        jLabel15.setText(null);
-        //Calibration Output
-        StrVector serialPorts = core_.getLoadedDevicesOfType(DeviceType.SerialDevice);
-        for (int i = 0; i < serialPorts.size(); i++) {
-            jComboBox1.addItem(serialPorts.get(i));
-        }
-        StrVector genericPorts = core_.getLoadedDevicesOfType(DeviceType.GenericDevice);
-        for (int i = 0; i < genericPorts.size(); i++) {
-            jComboBox2.addItem(genericPorts.get(i));
-        }
-        StrVector stagePorts = core_.getLoadedDevicesOfType(DeviceType.StageDevice);
-        for (int i = 0; i < stagePorts.size(); i++) {
-            jComboBox2.addItem(stagePorts.get(i));
-        }
-        setLocation(frameXPos_, frameYPos_);
+      this.setLayout(new MigLayout("flowx, fill, insets 8"));
+      this.setTitle("SAIM calibration");
 
-        setBackground(gui_.getBackgroundColor());
-*/
-    }
+      tabbedPane_ = new JTabbedPane();
 
-    /**
-     * This method is called from within the constructor to initialize the form.
-     * WARNING: Do NOT modify this code. The content of this method is always
-     * regenerated by the Form Editor.
-     */
-    //@SuppressWarnings("unchecked")
-    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
-    private void initComponents() {
+      tabbedPane_.add(new CalibrationPanel(gui_, prefs_));
+      tabbedPane_.add(new FlatFieldPanel(gui_, prefs_));
+      tabbedPane_.add(new AcquisitionPanel(gui_, prefs_));
 
-        jLabel1 = new javax.swing.JLabel();
-        jLabel2 = new javax.swing.JLabel();
-        jLabel3 = new javax.swing.JLabel();
-        jTextField2 = new javax.swing.JTextField();
-        jLabel4 = new javax.swing.JLabel();
-        jComboBox1 = new javax.swing.JComboBox();
-        jLabel5 = new javax.swing.JLabel();
-        jLabel6 = new javax.swing.JLabel();
-        jTextField4 = new javax.swing.JTextField();
-        jLabel7 = new javax.swing.JLabel();
-        jTextField1 = new javax.swing.JTextField();
-        jLabel8 = new javax.swing.JLabel();
-        jLabel9 = new javax.swing.JLabel();
-        jComboBox2 = new javax.swing.JComboBox();
-        jLabel10 = new javax.swing.JLabel();
-        jTextField3 = new javax.swing.JTextField();
-        jLabel11 = new javax.swing.JLabel();
-        jLabel12 = new javax.swing.JLabel();
-        jLabel13 = new javax.swing.JLabel();
-        OKButton_1 = new javax.swing.JButton();
-        jLabel14 = new javax.swing.JLabel();
-        jLabel15 = new javax.swing.JLabel();
-        jToggleButton1 = new javax.swing.JToggleButton();
-        jLabel16 = new javax.swing.JLabel();
-        jTextField5 = new javax.swing.JTextField();
-        jLabel17 = new javax.swing.JLabel();
-        jTextField6 = new javax.swing.JTextField();
+      this.add(tabbedPane_);
+      this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+      this.setResizable(false);
+      this.setVisible(true);
+      this.pack();
+   }
 
-        setTitle("SAIM Plugin");
-        setLocationByPlatform(true);
-        setResizable(false);
-        addWindowListener(new java.awt.event.WindowAdapter() {
-            public void windowClosing(java.awt.event.WindowEvent evt) {
-                onWindowClosing(evt);
-            }
-        });
-
-        jLabel1.setText("SAIM Calibration");
-
-        jLabel2.setText("Run Calibration: ");
-
-        jLabel3.setText("Start Motor Position: ");
-
-        jTextField2.setText("jTextField2");
-        jTextField2.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jTextField2ActionPerformed(evt);
-            }
-        });
-
-        jLabel4.setText("End Motor Position: ");
-
-        jComboBox1.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jComboBox1ActionPerformed(evt);
-            }
-        });
-
-        jLabel5.setText("Select Serial Port: ");
-
-        jLabel6.setText("Polynomial Fit: ");
-
-        jTextField4.setText("jTextField4");
-
-        jLabel7.setText("jLabel7");
-        jLabel7.setAutoscrolls(true);
-
-        jTextField1.setText("jTextField1");
-
-        jLabel8.setText("Number of Calibration Steps:");
-
-        jLabel9.setText("Select TIRF Motor: ");
-
-        jComboBox2.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jComboBox2ActionPerformed(evt);
-            }
-        });
-
-        jLabel10.setText("Set 0 Deg. Motor Position:");
-
-        jTextField3.setText("jTextField3");
-        jTextField3.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jTextField3ActionPerformed(evt);
-            }
-        });
-
-        jLabel11.setText("Calibrate");
-
-        jLabel12.setText("Setup");
-
-        jLabel13.setText("Calculate Offset:");
-
-        OKButton_1.setText("OK");
-        OKButton_1.setAlignmentX(0.5F);
-        OKButton_1.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                OKButton_1ActionPerformed(evt);
-            }
-        });
-
-        jLabel14.setText("Detector Offset:");
-
-        jLabel15.setText("jLabel15");
-
-        jToggleButton1.setText("jToggleButton1");
-        jToggleButton1.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jToggleButton1ActionPerformed(evt);
-            }
-        });
-
-        jLabel16.setText("Refractive Index of Immersion Media:");
-
-        jTextField5.setText("jTextField5");
-
-        jLabel17.setText("Refractive Index of Sample:");
-
-        jTextField6.setText("jTextField6");
-
-        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
-        getContentPane().setLayout(layout);
-        layout.setHorizontalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(196, 196, 196)
-                        .addComponent(jLabel11))
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(206, 206, 206)
-                        .addComponent(jLabel12)))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-            .addGroup(layout.createSequentialGroup()
-                .addGap(40, 40, 40)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jLabel2)
-                            .addGroup(layout.createSequentialGroup()
-                                .addComponent(jLabel6)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(jLabel7, javax.swing.GroupLayout.PREFERRED_SIZE, 323, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                        .addGap(0, 0, Short.MAX_VALUE)
-                        .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 159, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(134, 134, 134))
-                    .addGroup(layout.createSequentialGroup()
-                        .addComponent(jLabel14)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(jLabel15)
-                        .addGap(87, 87, 87))
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
-                                .addComponent(jLabel13)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                .addComponent(OKButton_1))
-                            .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(jLabel5)
-                                    .addComponent(jLabel9))
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(jComboBox1, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                    .addComponent(jComboBox2, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
-                            .addGroup(layout.createSequentialGroup()
-                                .addGap(0, 0, Short.MAX_VALUE)
-                                .addComponent(jToggleButton1))
-                            .addGroup(layout.createSequentialGroup()
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(jLabel10)
-                                    .addComponent(jLabel3)
-                                    .addComponent(jLabel4)
-                                    .addComponent(jLabel8)
-                                    .addComponent(jLabel16)
-                                    .addComponent(jLabel17))
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                                    .addComponent(jTextField6)
-                                    .addComponent(jTextField5)
-                                    .addComponent(jTextField2)
-                                    .addComponent(jTextField1, javax.swing.GroupLayout.Alignment.TRAILING)
-                                    .addComponent(jTextField4)
-                                    .addComponent(jTextField3, javax.swing.GroupLayout.DEFAULT_SIZE, 115, Short.MAX_VALUE))))
-                        .addGap(40, 40, 40))))
-        );
-        layout.setVerticalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addGap(20, 20, 20)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addGroup(layout.createSequentialGroup()
-                        .addComponent(jLabel1)
-                        .addGap(20, 20, 20)
-                        .addComponent(jLabel12, javax.swing.GroupLayout.PREFERRED_SIZE, 16, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(10, 10, 10)
-                        .addComponent(jComboBox1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(2, 2, 2)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jComboBox2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jLabel9, javax.swing.GroupLayout.PREFERRED_SIZE, 26, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                    .addGroup(layout.createSequentialGroup()
-                        .addComponent(jLabel5)
-                        .addGap(32, 32, 32)))
-                .addGap(2, 2, 2)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jTextField3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel10))
-                .addGap(5, 5, 5)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel13)
-                    .addComponent(OKButton_1))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel14)
-                    .addComponent(jLabel15))
-                .addGap(26, 26, 26)
-                .addComponent(jLabel11)
-                .addGap(5, 5, 5)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel17)
-                    .addComponent(jTextField6, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jTextField5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel16))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel3)
-                    .addComponent(jTextField4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(5, 5, 5)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel4)
-                    .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(5, 5, 5)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, 28, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel8))
-                .addGap(5, 5, 5)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel2)
-                    .addComponent(jToggleButton1))
-                .addGap(39, 39, 39)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel6)
-                    .addComponent(jLabel7))
-                .addGap(40, 40, 40))
-        );
-
-        pack();
-    }// </editor-fold>//GEN-END:initComponents
-
-    /**
-     * When window closes, take the opportunity to save settings to Preferences
-     *
-     * @param evt
-     */
-    private void onWindowClosing(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_onWindowClosing
-        prefs_.putInt(FRAMEXPOS, (int) getLocation().getX());
-        prefs_.putInt(FRAMEYPOS, (int) getLocation().getY());
-
-    }//GEN-LAST:event_onWindowClosing
-
-    private void jTextField2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField2ActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jTextField2ActionPerformed
-
-    private void jTextField3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField3ActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jTextField3ActionPerformed
-
-    private void jComboBox1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jComboBox1ActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jComboBox1ActionPerformed
-
-    private void jComboBox2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jComboBox2ActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jComboBox2ActionPerformed
-
-    private void OKButton_1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_OKButton_1ActionPerformed
-        // TODO add your handling code here:
-        RunOffsetCalc();
-    }//GEN-LAST:event_OKButton_1ActionPerformed
-
-    private void jToggleButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jToggleButton1ActionPerformed
-        // TODO add your handling code here:
-        if (jToggleButton1.isSelected()) {
-            jToggleButton1.setText("Abort");
-            RunCalibration();
-        } else {
-            jToggleButton1.setText("Run");
-        }
-    }//GEN-LAST:event_jToggleButton1ActionPerformed
-
-    // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton OKButton_1;
-    private javax.swing.JComboBox jComboBox1;
-    private javax.swing.JComboBox jComboBox2;
-    private javax.swing.JLabel jLabel1;
-    private javax.swing.JLabel jLabel10;
-    private javax.swing.JLabel jLabel11;
-    private javax.swing.JLabel jLabel12;
-    private javax.swing.JLabel jLabel13;
-    private javax.swing.JLabel jLabel14;
-    private javax.swing.JLabel jLabel15;
-    private javax.swing.JLabel jLabel16;
-    private javax.swing.JLabel jLabel17;
-    private javax.swing.JLabel jLabel2;
-    private javax.swing.JLabel jLabel3;
-    private javax.swing.JLabel jLabel4;
-    private javax.swing.JLabel jLabel5;
-    private javax.swing.JLabel jLabel6;
-    private javax.swing.JLabel jLabel7;
-    private javax.swing.JLabel jLabel8;
-    private javax.swing.JLabel jLabel9;
-    private javax.swing.JTextField jTextField1;
-    private javax.swing.JTextField jTextField2;
-    private javax.swing.JTextField jTextField3;
-    private javax.swing.JTextField jTextField4;
-    private javax.swing.JTextField jTextField5;
-    private javax.swing.JTextField jTextField6;
-    private javax.swing.JToggleButton jToggleButton1;
-    // End of variables declaration//GEN-END:variables
-
-    private void RunOffsetCalc() {
-        final int zeroPos = Integer.parseInt(jTextField3.getText());
-        try {
-            core_.setShutterOpen(true);
-            detectorMeans offsetVal = takeSnapshot(zeroPos, "Offset Scan");
-            core_.setShutterOpen(false);
-            if (offsetVal != null) {
-                Double offset = offsetVal.getDect1() - offsetVal.getDect2();
-                ij.IJ.log("Detector offset: " + offset + "\n");
-                String printOffset = new DecimalFormat("#.###").format(offset);
-                jLabel15.setText("" + printOffset);
-            }
-        } catch (Exception ex) {
-            ij.IJ.log(ex.getMessage() + ", Failed to open/close the shutter");
-        }
-    }
-
-    private void RunCalibration() {
-        // Editable variables for calibration
-        final int startPosition = Integer.parseInt(jTextField4.getText());
-        final int endPosition = Integer.parseInt(jTextField2.getText());
-        final int nrAngles = Integer.parseInt(jTextField1.getText());
-        final int angleStepSize = (endPosition - startPosition) / nrAngles;
-        final String port = jComboBox1.getSelectedItem().toString();
-        final String deviceName = jComboBox2.getSelectedItem().toString();
-        final String propName = "Position";
-
-        class calThread extends Thread {
-
-            calThread(String threadName) {
-                super(threadName);
-            }
-
-            @Override
-            public void run() {
-                int i = 0;
-                try {
-                    //Take image of laser position
-                    XYSeries dect1gaussianMeans = new XYSeries(new Double(nrAngles), false, true);
-                    XYSeries dect2gaussianMeans = new XYSeries(new Double(nrAngles), false, true);
-                    core_.setShutterOpen(true);
-                    int pos = startPosition;
-                    for (int angle = 0; angle <= nrAngles; angle++) {
-                        //Check state of user Abort button 
-                        if (jToggleButton1.isSelected()) {
-                        } else {
-                            throw new Exception("User aborted calibration");
-                        }
-                        detectorMeans laserPos = takeSnapshot(pos, "Saim Scan");
-                        if (laserPos != null) {
-                            dect1gaussianMeans.add(pos, laserPos.getDect1());
-                            dect2gaussianMeans.add(pos, laserPos.getDect2());
-                            pos = pos + angleStepSize;
-                        }
-                    }
-                    //Read offset if calculated
-                    Double detectorOffset;
-                    if ((jLabel15.getText()) != null) {
-                        detectorOffset = Double.parseDouble(jLabel15.getText());
-                    } else {
-                        detectorOffset = 0.0;
-                    }
-                    //Determine angle of laser light at each motor position
-                    XYSeries observedAngles = new XYSeries("angles", false, true);
-                    for (int l = 0; l <= nrAngles; l++) {
-                        Double motorPosition = dect1gaussianMeans.getX(l).doubleValue();
-                        Double dect1val = dect1gaussianMeans.getY(l).doubleValue();
-                        Double dect2val = dect2gaussianMeans.getY(l).doubleValue() + detectorOffset;
-                        //pixel center to center distance is 63.5 um
-                        double xdisp = (dect1val.floatValue() - dect2val.floatValue()) * 0.0635;
-                        //detector1 center to detector2 center is 20.64 mm
-                        double ydisp = 20.64;
-                        Double observedAngle = Math.toDegrees(Math.atan(xdisp / ydisp));
-                        //Snells law correction angle of laser light for refractive index 
-                        //Refractive indeces: acrylic = 1.49, water = 1.33, user input = RI
-                        //determine true angle coming out of objective (correct for acryllic)
-                        double immersionRI = Double.parseDouble(jTextField5.getText());
-                        double sampleRI = Double.parseDouble(jTextField6.getText());
-                        Double firstCorrect = snellIt(observedAngle, immersionRI, 1.49);
-                        //determine true angle hitting the sample (correct for water/buffer)
-                        Double trueAngle = snellIt(firstCorrect, immersionRI, sampleRI);
-                        observedAngles.add(trueAngle, motorPosition);
-                    }
-                    //Plot calibration curve
-                    PlotUtils myPlotter2 = new PlotUtils(prefs_);
-                    double[] calCurve = Fitter.fit(observedAngles, Fitter.FunctionType.Pol3, null);
-                    XYSeries[] toPlot = new XYSeries[2];
-                    toPlot[0] = observedAngles;
-                    toPlot[1] = Fitter.getFittedSeries(toPlot[0], Fitter.FunctionType.Pol3, calCurve);
-                    boolean[] showShapes = {true, false};
-                    myPlotter2.plotDataN("Calibration Curve", toPlot, "Position", "True Angle", showShapes, "");
-
-                    String coeff1 = new DecimalFormat("0.##E0").format(calCurve[3]);
-                    String coeff2 = new DecimalFormat("0.##E0").format(calCurve[2]);
-                    String coeff3 = new DecimalFormat("0.##E0").format(calCurve[1]);
-                    String offset = new DecimalFormat("#.##").format(calCurve[0]);
-                    jLabel7.setText("y = " + coeff1 + "* x^3 + " + coeff2 + "* x^2 + " + coeff3 + "x + " + offset);
-                    ij.IJ.log("y = " + calCurve[3] + "* x^3 + " + calCurve[2] + "* x^2 + " + calCurve[1] + "x + " + calCurve[0]);
-
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                    ij.IJ.log(ex.getMessage() + "\nRan until # " + i);
-                } finally {
-                    try {
-                        core_.setShutterOpen(false);
-                    } catch (Exception ex) {
-                        ij.IJ.log(ex.getMessage());
-                    };
-                    jToggleButton1.setText("Run");
-                    jToggleButton1.setSelected(false);
-                }
-            }
-        }
-        calThread calt = new calThread("SAIM Callibration");
-        calt.start();
-    }
-
-    //Snell's Law function
-    private static double snellIt(double startAngle, double startRI, double endRI) {
-        Double trueAngle = Math.toDegrees(Math.asin((startRI/endRI)*Math.sin(Math.toRadians(startAngle))));
-        return trueAngle;
-    }
-    //create detectorMeans class for storing detector gaussian means
-    final private class detectorMeans {
-
-        private final double dect1;
-        private final double dect2;
-
-        public detectorMeans(double dect1, double dect2) {
-            this.dect1 = dect1;
-            this.dect2 = dect2;
-        }
-
-        public double getDect1() {
-            return dect1;
-        }
-
-        public double getDect2() {
-            return dect2;
-        }
-    }
-
-    //main class code
-    private detectorMeans takeSnapshot(int pos, String plotTitle) {
-        int i = 0;
-        try {
-            //Set up communication with devices
-            final String port = jComboBox1.getSelectedItem().toString();
-            final String deviceName = jComboBox2.getSelectedItem().toString();
-            final String propName = "Position";
-            //Initialize xyseries to collect pixel intensity values
-            XYSeries dect1readings = new XYSeries("lower", false, true);
-            XYSeries dect2readings = new XYSeries("upper", false, true);
-            //Set motor position
-            core_.setProperty(deviceName, propName, pos);
-            core_.waitForDevice(deviceName);
-            ij.IJ.log("Pos: " + pos);
-            //Send command to calibration device, record pixel intensity vales
-            core_.setSerialPortCommand(port, "1", "");
-            for (i = 0; i < 1536; i++) {
-                String answer = core_.getSerialPortAnswer(port, "\n");
-                String[] vals = answer.trim().split("\\t");
-                if (vals.length == 2) {
-                    int dect1px = Integer.valueOf(vals[0]);
-                    int dect2px = Integer.valueOf(vals[1]);
-                    dect1readings.add(i, dect1px);
-                    dect2readings.add(i, dect2px);
-                } else {
-                    System.out.println("Val is not 2: " + answer);
-                }
-            }
-
-            //shuffle values of detector 1 to match physical layout of pixels
-            int size = dect1readings.getItemCount();
-            XYSeries dect1readingsFlip = new XYSeries("lower", false, true);
-            for (int a = 0; a < size; a++) {
-                Number pxvalue = dect1readings.getY(size - 1 - a);
-                dect1readingsFlip.add(a, pxvalue);
-            }
-            //setup plotting detector readings
-            PlotUtils myPlotter = new PlotUtils(prefs_);
-            XYSeries[] toPlot = new XYSeries[4];
-            toPlot[0] = dect1readingsFlip;
-            toPlot[1] = dect2readings;
-            boolean[] showShapes = {true, true, false, false};
-
-            //Fit result to a gaussian
-            double[] result1 = Fitter.fit(dect1readingsFlip, Fitter.FunctionType.Gaussian, null);
-            toPlot[2] = Fitter.getFittedSeries(dect1readingsFlip, Fitter.FunctionType.Gaussian, result1);
-            ij.IJ.log("Dectector 1 Mean: " + result1[1] + "\n");
-            double[] result2 = Fitter.fit(dect2readings, Fitter.FunctionType.Gaussian, null);
-            toPlot[3] = Fitter.getFittedSeries(dect2readings, Fitter.FunctionType.Gaussian, result2);
-            ij.IJ.log("Dectector 2 Mean: " + result2[1] + "\n");
-
-            //Plot detector readings and gaussian fits
-            myPlotter.plotDataN(plotTitle, toPlot, "Pixel", "Intensity", showShapes, "Pos: " + pos);
-
-            //Return gaussian means as detectorMeans object
-            return new detectorMeans(result1[1], result2[1]);
-
-        } catch (Exception ex) {
-            ij.IJ.log(ex.getMessage() + "\nRan until # " + i);
-        }
-        return null;
-    }
 }

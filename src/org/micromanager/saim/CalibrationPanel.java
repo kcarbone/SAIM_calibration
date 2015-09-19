@@ -258,6 +258,11 @@ public class CalibrationPanel extends JPanel {
       
    }
    
+   /**
+    * Utility function to set attributes for JTextFields in the dialog
+    * @param jtf JTextField whose attributes will be set
+    * @param size Desired minimum size
+    */
    private void setTextAttributes (JTextField jtf, Dimension size) {
       jtf.setHorizontalAlignment(JTextField.RIGHT);
       jtf.setMinimumSize(size);
@@ -357,6 +362,12 @@ public class CalibrationPanel extends JPanel {
       return null;
    }
 
+   
+   /**
+    * Runs the calibration itself in its own thread.
+    * 
+    * 
+    */
    private void RunCalibration() {
 
       class calThread extends Thread {
@@ -368,18 +379,10 @@ public class CalibrationPanel extends JPanel {
          @Override
          public void run() {
             // Editable variables for calibration
-            int angleStepSize;
-            int startPosition, endPosition, nrAngles;
-            try {
-               startPosition = Integer.parseInt(startMotorPosField_.getText());
-               endPosition = Integer.parseInt(endMotorPosField_.getText());
-               nrAngles = (Integer) numberOfCalibrationStepsSpinner_.getValue();
-               angleStepSize = (endPosition - startPosition) / nrAngles;
-            } catch (NumberFormatException nfe) {
-               ij.IJ.error("Can not convert " + nfe.getMessage() + " to an integer");
-               runButton_.setText("Run Calibration");
-               return;
-            }
+            final int startPosition = Integer.parseInt(startMotorPosField_.getText());
+            final int endPosition = Integer.parseInt(endMotorPosField_.getText());
+            final int nrAngles = (Integer) numberOfCalibrationStepsSpinner_.getValue();
+            final int angleStepSize = (endPosition - startPosition) / nrAngles;
             int i = 0;
             try {
                //Take image of laser position
@@ -418,9 +421,9 @@ public class CalibrationPanel extends JPanel {
                   //detector1 center to detector2 center is 20.64 mm
                   double ydisp = 20.64;
                   Double observedAngle = Math.toDegrees(Math.atan(xdisp / ydisp));
-                        //Snells law correction angle of laser light for refractive index 
+                  //Snells law correction angle of laser light for refractive index 
                   //Refractive indeces: acrylic = 1.49, water = 1.33, user input = RI
-                  //determine true angle coming out of objective (correct for acryllic)
+                  //determine true angle coming out of objective (correct for acrylic)
                   double immersionRI = Double.parseDouble(sampleRIField_.getText());
                   double sampleRI = Double.parseDouble(immersionRIField_.getText());
                   Double firstCorrect = snellIt(observedAngle, immersionRI, 1.49);
@@ -457,6 +460,8 @@ public class CalibrationPanel extends JPanel {
             }
          }
       }
+      
+      
       calThread calt = new calThread("SAIM Callibration");
       calt.start();
    }
