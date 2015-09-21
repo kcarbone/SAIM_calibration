@@ -426,7 +426,7 @@ public class CalibrationPanel extends JPanel {
                   //determine true angle coming out of objective (correct for acrylic)
                   double immersionRI = Double.parseDouble(sampleRIField_.getText());
                   double sampleRI = Double.parseDouble(immersionRIField_.getText());
-                  Double firstCorrect = snellIt(observedAngle, immersionRI, 1.49);
+                  Double firstCorrect = snellIt(observedAngle, 1.49, immersionRI);
                   //determine true angle hitting the sample (correct for water/buffer)
                   Double trueAngle = snellIt(firstCorrect, immersionRI, sampleRI);
                   observedAngles.add(trueAngle, motorPosition);
