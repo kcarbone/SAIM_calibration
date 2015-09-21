@@ -18,7 +18,7 @@
 
 package org.micromanager.saim;
 
-import mmcorej.CMMCore;
+import java.awt.event.WindowEvent;
 import org.micromanager.api.MMPlugin;
 import org.micromanager.api.ScriptInterface;
 
@@ -33,12 +33,15 @@ public class SAIM implements MMPlugin {
    @Override
    public void setApp(ScriptInterface app) {
       gui_ = app;  
-      if (myFrame_ == null)
-         myFrame_ = new SAIMFrame(gui_);
+
+      if (myFrame_!= null) {
+         WindowEvent wev = new WindowEvent(myFrame_, WindowEvent.WINDOW_CLOSING);
+         myFrame_.dispatchEvent(wev);
+         myFrame_ = null;
+      }
+
+      myFrame_ = new SAIMFrame(gui_);
       myFrame_.setVisible(true);
-      
-      // Used to change the background layout of the form.  Does not work on Windows
-      gui_.addMMBackgroundListener(myFrame_);
    }
 
    @Override
@@ -48,6 +51,10 @@ public class SAIM implements MMPlugin {
 
    @Override
    public void show() {
+      if (myFrame_ == null) {
+         myFrame_ = new SAIMFrame(gui_);
+      }
+      myFrame_.setVisible(true);
    }
 
    public void configurationChanged() {
