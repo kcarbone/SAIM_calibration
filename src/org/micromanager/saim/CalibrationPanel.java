@@ -253,7 +253,7 @@ public class CalibrationPanel extends JPanel {
       calibratePanel.add(fitLabel_, "span 2, wrap");
       
       // Combine them all
-      add(setupPanel,"wrap");
+      add(setupPanel,"span, growx, wrap");
       add(calibratePanel, "span, growx, wrap");
       
    }
