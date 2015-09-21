@@ -19,7 +19,6 @@
 package org.micromanager.saim;
 
 import java.awt.event.WindowEvent;
-import mmcorej.CMMCore;
 import org.micromanager.api.MMPlugin;
 import org.micromanager.api.ScriptInterface;
 
