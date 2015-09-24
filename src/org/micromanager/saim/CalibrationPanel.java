@@ -25,6 +25,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.geom.Point2D;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.prefs.Preferences;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -46,6 +48,7 @@ import org.micromanager.saim.fit.Fitter;
 import org.micromanager.saim.gui.GuiUtils;
 import org.micromanager.saim.plot.PlotUtils;
 
+
 /**
  *
  * @author nico
@@ -64,7 +67,6 @@ public class CalibrationPanel extends JPanel {
    private final String ENDMOTORPOS = "cal.endmotorposition";
    private final String NUMCALSTEPS = "cal.numberofcalibrationsteps";
    
-   
    private final JTextField motorPosField_;
    private final JComboBox serialPortBox_;
    private final JComboBox tirfMotorBox_;
@@ -76,6 +78,9 @@ public class CalibrationPanel extends JPanel {
    private final JSpinner numberOfCalibrationStepsSpinner_;
    private final JToggleButton runButton_;
    private final JLabel fitLabel_;
+   
+   //list of "listeners" for updated calibration coefficients 
+   private List<ICalibrationObserver> listeners = new ArrayList<ICalibrationObserver>();
    
    public CalibrationPanel (ScriptInterface gui, Preferences prefs) {
       super(new MigLayout(
@@ -135,7 +140,7 @@ public class CalibrationPanel extends JPanel {
       // set motor position
       setupPanel.add(new JLabel("Set 0 Deg. Motor Position:"));
       motorPosField_ = new JTextField( 
-              ((Integer) (prefs_.getInt(MOTORPOS, 0))).toString());
+              Integer.toString(prefs_.getInt(MOTORPOS, 0)));
       setTextAttributes(motorPosField_, componentSize);
       motorPosField_.addActionListener(new ActionListener() {
          @Override
@@ -440,6 +445,9 @@ public class CalibrationPanel extends JPanel {
                boolean[] showShapes = {true, false};
                myPlotter2.plotDataN("Calibration Curve", toPlot, "Position", "True Angle", showShapes, "");
 
+               //tell flatfield and acquisition panels calibration coefficients
+               notifyCalibrationObservers(calCurve[3], calCurve[2], calCurve[1], calCurve[0]);
+               
                String coeff1 = new DecimalFormat("0.##E0").format(calCurve[3]);
                String coeff2 = new DecimalFormat("0.##E0").format(calCurve[2]);
                String coeff3 = new DecimalFormat("0.##E0").format(calCurve[1]);
@@ -472,4 +480,15 @@ public class CalibrationPanel extends JPanel {
         return trueAngle;
     }
    
+    //method to add to "listeners" 
+    public void addCalibrationObserver(ICalibrationObserver calObserver){
+        listeners.add(calObserver);
+    }
+    
+    //method to notify "listeners"
+    private void notifyCalibrationObservers(double x3, double x2, double x1, double x0){
+        for (ICalibrationObserver o : listeners) {
+            o.calibrationChanged(x3, x2, x1, x0);
+        }
+    }
 }

@@ -62,9 +62,16 @@ public class SAIMFrame extends MMFrame {
 
       tabbedPane_ = new JTabbedPane();
 
-      tabbedPane_.add(new CalibrationPanel(gui_, prefs_));
-      tabbedPane_.add(new FlatFieldPanel(gui_, prefs_));
-      tabbedPane_.add(new AcquisitionPanel(gui_, prefs_));
+      AcquisitionPanel acqPanel = new AcquisitionPanel(gui_, prefs_);
+      FlatFieldPanel ffPanel = new FlatFieldPanel(gui_, prefs_);
+      CalibrationPanel calPanel = new CalibrationPanel(gui_, prefs_);
+      
+      calPanel.addCalibrationObserver(acqPanel);
+      calPanel.addCalibrationObserver(ffPanel);
+      
+      tabbedPane_.add(calPanel);
+      tabbedPane_.add(ffPanel);
+      tabbedPane_.add(acqPanel);
 
       this.add(tabbedPane_);
       this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
