@@ -40,7 +40,7 @@ import javax.swing.SpinnerNumberModel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import mmcorej.CMMCore;
-import mmcorej.TaggedImage; 
+import mmcorej.TaggedImage;
 import net.miginfocom.swing.MigLayout;
 import org.micromanager.api.ScriptInterface;
 import org.micromanager.saim.gui.GuiUtils;
@@ -52,7 +52,7 @@ import org.micromanager.utils.MMScriptException;
  *
  * @author nico
  */
-public class AcquisitionPanel extends JPanel implements ICalibrationObserver{
+public class AcquisitionPanel extends JPanel implements ICalibrationObserver {
 
     ScriptInterface gui_;
     CMMCore core_;
@@ -60,7 +60,6 @@ public class AcquisitionPanel extends JPanel implements ICalibrationObserver{
 
     private final String ANGLESTEPSIZE = "acq.anglestepsize";
     private final String STARTANGLE = "acq.startangle";
-    private final String ENDANGLE = "acq.endangle";
     private final String DOUBLEZERO = "acq.doulbezero";
     private final String SAVEIMAGES = "acq.saveimages";
     private final String DIRROOT = "acq.dirroot";
@@ -72,7 +71,6 @@ public class AcquisitionPanel extends JPanel implements ICalibrationObserver{
 
     private final JSpinner angleStepSizeSpinner_;
     private final JTextField startAngleField_;
-    private final JTextField endAngleField_;
     private final JCheckBox doubleZeroCheckBox_;
     private final JPanel calPanel_;
     private final JCheckBox saveImagesCheckBox_;
@@ -105,11 +103,11 @@ public class AcquisitionPanel extends JPanel implements ICalibrationObserver{
         // set angle step size
         setupPanel.add(new JLabel("Angle Step Size (degrees):"));
         angleStepSizeSpinner_ = new JSpinner(new SpinnerNumberModel(
-                prefs_.getInt(ANGLESTEPSIZE, 100), 0, 400, 1));
+                prefs_.getDouble(ANGLESTEPSIZE, 100), 0, 180, 0.1));
         angleStepSizeSpinner_.addChangeListener(new ChangeListener() {
             @Override
             public void stateChanged(ChangeEvent e) {
-                prefs_.putInt(ANGLESTEPSIZE, (Integer) angleStepSizeSpinner_.getValue());
+                prefs_.putDouble(ANGLESTEPSIZE, (Double) angleStepSizeSpinner_.getValue());
             }
         });
         setupPanel.add(angleStepSizeSpinner_, "span, growx, wrap");
@@ -117,33 +115,20 @@ public class AcquisitionPanel extends JPanel implements ICalibrationObserver{
         // set start angle
         setupPanel.add(new JLabel("Start Angle:"));
         startAngleField_ = new JTextField(
-                ((Integer) (prefs_.getInt(STARTANGLE, 0))).toString());
+                prefs_.get(STARTANGLE, "0"));
         setTextAttributes(startAngleField_, componentSize);
         startAngleField_.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                prefs_.putDouble(STARTANGLE, Integer.parseInt(
-                        startAngleField_.getText()));
+                prefs_.put(STARTANGLE, startAngleField_.getText());
             }
         });
         setupPanel.add(startAngleField_, "span, growx, wrap");
-
-        // set end angle
-        setupPanel.add(new JLabel("End Angle:"));
-        endAngleField_ = new JTextField(
-                ((Integer) (prefs_.getInt(ENDANGLE, 0))).toString());
-        setTextAttributes(endAngleField_, componentSize);
-        endAngleField_.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                prefs_.putDouble(ENDANGLE, Integer.parseInt(
-                        endAngleField_.getText()));
-            }
-        });
-        setupPanel.add(endAngleField_, "span, growx, wrap");
+        setupPanel.add(new JLabel("Start angle must be divisible by angle step size."), "span 2, wrap");
 
         // set double zero position
         doubleZeroCheckBox_ = new JCheckBox("Double Zero Position");
+        doubleZeroCheckBox_.setSelected(true);
         doubleZeroCheckBox_.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -171,8 +156,7 @@ public class AcquisitionPanel extends JPanel implements ICalibrationObserver{
         coeff3Field_.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                prefs_.put(COEFF3,
-                        coeff3Field_.getText());
+                prefs_.put(COEFF3, coeff3Field_.getText());
             }
         });
         calPanel_.add(coeff3Field_, "span, center, wrap");
@@ -185,8 +169,7 @@ public class AcquisitionPanel extends JPanel implements ICalibrationObserver{
         coeff2Field_.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                prefs_.put(COEFF2,
-                        coeff2Field_.getText());
+                prefs_.put(COEFF2, coeff2Field_.getText());
             }
         });
         calPanel_.add(coeff2Field_, "span, center, wrap");
@@ -199,8 +182,7 @@ public class AcquisitionPanel extends JPanel implements ICalibrationObserver{
         coeff1Field_.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                prefs_.put(COEFF3,
-                        coeff1Field_.getText());
+                prefs_.put(COEFF3, coeff1Field_.getText());
             }
         });
         calPanel_.add(coeff1Field_, "span, center, wrap");
@@ -213,12 +195,11 @@ public class AcquisitionPanel extends JPanel implements ICalibrationObserver{
         coeff0Field_.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                prefs_.put(COEFF0,
-                        coeff0Field_.getText());
+                prefs_.put(COEFF0, coeff0Field_.getText());
             }
         });
         calPanel_.add(coeff0Field_, "span, center, wrap");
-        
+
         // Acquire Panel
         JPanel acquirePanel = new JPanel(new MigLayout(
                 "", ""));
@@ -234,7 +215,7 @@ public class AcquisitionPanel extends JPanel implements ICalibrationObserver{
         dirRootChooser_.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                prefs_.putDouble(DIRROOT, Integer.parseInt(dirRootChooser_.getName()));
+                prefs_.put(DIRROOT, dirRootChooser_.getName());
             }
         });
 
@@ -246,8 +227,7 @@ public class AcquisitionPanel extends JPanel implements ICalibrationObserver{
         dirRootField_.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                prefs_.put(DIRROOT,
-                        dirRootField_.getText());
+                prefs_.put(DIRROOT, dirRootField_.getText());
             }
         });
         acquirePanel.add(dirRootField_);
@@ -270,8 +250,7 @@ public class AcquisitionPanel extends JPanel implements ICalibrationObserver{
         namePrefixField_.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                prefs_.put(NAMEPREFIX,
-                        namePrefixField_.getText());
+                prefs_.put(NAMEPREFIX, namePrefixField_.getText());
             }
         });
         acquirePanel.add(namePrefixField_, "span, growx, wrap");
@@ -289,7 +268,7 @@ public class AcquisitionPanel extends JPanel implements ICalibrationObserver{
             }
         });
         acquirePanel.add(saveImagesCheckBox_, "span 2, growx, wrap");
-        
+
         // set run button
         runButton_ = new JToggleButton("Run Acquisition");
         runButton_.addActionListener(new ActionListener() {
@@ -322,13 +301,12 @@ public class AcquisitionPanel extends JPanel implements ICalibrationObserver{
         jtf.setHorizontalAlignment(JTextField.RIGHT);
         jtf.setMinimumSize(size);
     }
-   
 
-    public void calibrationChanged(double x3, double x2, double x1, double x0){
+    public void calibrationChanged(double x3, double x2, double x1, double x0) {
         String coeff0 = new DecimalFormat("0.#########").format(x0);
         prefs_.put(COEFF0, coeff0);
         coeff0Field_.setText(coeff0);
-        
+
         String coeff1 = new DecimalFormat("0.#########").format(x1);
         prefs_.put(COEFF1, coeff1);
         coeff1Field_.setText(coeff1);
@@ -341,7 +319,7 @@ public class AcquisitionPanel extends JPanel implements ICalibrationObserver{
         prefs_.put(COEFF3, coeff3);
         coeff3Field_.setText(coeff3);
     }
-    
+
     protected void setRootDirectory() {
         File result = FileDialogs.openDir(null,
                 "Please choose a directory root for image data",
@@ -359,71 +337,94 @@ public class AcquisitionPanel extends JPanel implements ICalibrationObserver{
      *
      */
     private void RunAcquisition() {
-        try {
-            // Set these variables to the correct values and leave
-            final String deviceName = "TITIRF";
-            final String propName = "Position";
-            int startAngle = Integer.parseInt(startAngleField_.getText());
-            int angleStepSize = prefs_.getInt(ANGLESTEPSIZE, 0);
-            
-            // Usually no need to edit below this line
-            int nrAngles = Math.abs(startAngle) * 2 / angleStepSize;
-            
-            gui_.closeAllAcquisitions();
-            final String acq = gui_.getUniqueAcquisitionName(namePrefixField_.getText());
-            
-            gui_.openAcquisition(acq,
-                    "", 1, 1, nrAngles + 2, 1,
-                    true, // Show
-                    false); // Save <--change this to save files in root directory
-            
-            // First take images from start to 90 degrees
-            int pos = startAngle;
-            int nrAngles1 = nrAngles / 2;
-            for (int a = 0;
-                    a <= nrAngles1;
-                    a++) {
-                double val = tirfPosFromAngle(pos);
-                gui_.message("Image: " + Integer.toString(a) + ", angle: " + Integer.toString(pos) + ", val: " + Double.toString(val));
-                core_.setProperty(deviceName, propName, val);
-                core_.waitForDevice(deviceName);
-                //gui.sleep(250);
-                core_.snapImage();
-                TaggedImage taggedImg = core_.getTaggedImage();
-                taggedImg.tags.put("Angle", pos);
-                gui_.addImageToAcquisition(acq, 0, 0, a, 0, taggedImg);
-                pos += angleStepSize;
+        double startAngle = Double.parseDouble(startAngleField_.getText());
+        double angleStepSize = prefs_.getDouble(ANGLESTEPSIZE, 0);
+        if (startAngle % angleStepSize == 0) {
+            try {
+                // Set these variables to the correct values and leave
+                final String deviceName = "TITIRF";
+                final String propName = "Position";
+
+                // Usually no need to edit below this line
+                double tempnrAngles = Math.abs(startAngle) * 2 / angleStepSize;
+                int nrAngles = (Integer) Math.round((float) tempnrAngles);
+
+                gui_.closeAllAcquisitions();
+                final String acq = gui_.getUniqueAcquisitionName(namePrefixField_.getText());
+
+                int frames = nrAngles + 1;
+                if (doubleZeroCheckBox_.isSelected()) {
+                    frames = nrAngles + 2;
+                }
+
+                if (saveImagesCheckBox_.isSelected()) {
+                    gui_.openAcquisition(acq,
+                            dirRootField_.getText(), 1, 1, frames, 1,
+                            true, // Show
+                            true); // Save <--change this to save files in root directory
+                } else {
+                    gui_.openAcquisition(acq,
+                            dirRootField_.getText(), 1, 1, frames, 1,
+                            true, // Show
+                            false); // Save <--change this to save files in root directory
+                }
+
+                // First take images from start to 90 degrees
+                double pos = startAngle;
+                double nrAngles1 = nrAngles / 2;
+                for (int a = 0;
+                        a <= nrAngles1;
+                        a++) {
+                    double val = tirfPosFromAngle(pos);
+                    gui_.message("Image: " + Integer.toString(a) + ", angle: " + Double.toString(pos) + ", val: " + Double.toString(val));
+                    core_.setProperty(deviceName, propName, val);
+                    core_.waitForDevice(deviceName);
+                    //gui.sleep(250);
+                    core_.snapImage();
+                    TaggedImage taggedImg = core_.getTaggedImage();
+                    taggedImg.tags.put("Angle", pos);
+                    gui_.addImageToAcquisition(acq, 0, 0, a, 0, taggedImg);
+                    pos += angleStepSize;
+                }
+
+                // if doubleZeroCheckBox is selected, take images from 0 degrees
+                //to (0 - startposition) degrees
+                double pos1 = angleStepSize;
+                double nrAngles2 = nrAngles / 2;
+                if (doubleZeroCheckBox_.isSelected()) {
+                    pos1 = 0;
+                    nrAngles2 = nrAngles / 2 + 1;
+                }
+
+                for (int b = 0;
+                        b <= nrAngles1 + nrAngles2;
+                        b++) {
+                    double val = tirfPosFromAngle(pos1);
+                    gui_.message("Image: " + Integer.toString(b) + ", angle: " + Double.toString(pos1) + ", val: " + Double.toString(val));
+                    core_.setProperty(deviceName, propName, val);
+                    core_.waitForDevice(deviceName);
+                    //gui.sleep(250);
+                    core_.snapImage();
+                    TaggedImage taggedImg = core_.getTaggedImage();
+                    taggedImg.tags.put("Angle", pos1);
+                    gui_.addImageToAcquisition(acq, 0, 0, b, 0, taggedImg);
+                    pos1 += angleStepSize;
+                }
+
+                gui_.closeAcquisition(acq);
+            } catch (Exception ex) {
+                //ex.printStackTrace();
+                ij.IJ.log(ex.getMessage());
+                ij.IJ.error("Something went wrong.  Aborting!");
+            } finally {
+                runButton_.setSelected(false);
+                runButton_.setText("Run Acquisition");
             }
-            
-            // then take images from 0 degrees to (0 - startposition) degrees
-            int pos1 = 0;
-            int nrAngles2 = nrAngles / 2 + 1;
-            for (int b = 0;
-                    b <= nrAngles1 + nrAngles2;
-                    b++) {
-                double val = tirfPosFromAngle(pos1);
-                gui_.message("Image: " + Integer.toString(b) + ", angle: " + Integer.toString(pos1) + ", val: " + Double.toString(val));
-                core_.setProperty(deviceName, propName, val);
-                core_.waitForDevice(deviceName);
-                //gui.sleep(250);
-                core_.snapImage();
-                TaggedImage taggedImg = core_.getTaggedImage();
-                taggedImg.tags.put("Angle", pos1);
-                gui_.addImageToAcquisition(acq, 0, 0, b, 0, taggedImg);
-                pos1 += angleStepSize;
-            }
-            
-            
-            gui_.closeAcquisition(acq);
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            ij.IJ.log(ex.getMessage());
-            ij.IJ.error("Something went wrong.  Aborting!");
-        } finally {
+        } else {
+            ij.IJ.error("Start angle is not divisible by angle step size!");
             runButton_.setSelected(false);
             runButton_.setText("Run Acquisition");
         }
-
     }
 
     private int tirfPosFromAngle(double angle) {

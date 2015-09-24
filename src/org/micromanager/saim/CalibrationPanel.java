@@ -443,7 +443,7 @@ public class CalibrationPanel extends JPanel {
                toPlot[0] = observedAngles;
                toPlot[1] = Fitter.getFittedSeries(toPlot[0], Fitter.FunctionType.Pol3, calCurve);
                boolean[] showShapes = {true, false};
-               myPlotter2.plotDataN("Calibration Curve", toPlot, "Position", "True Angle", showShapes, "");
+               myPlotter2.plotDataN("Calibration Curve", toPlot, "True Angle", "Position", showShapes, "");
 
                //tell flatfield and acquisition panels calibration coefficients
                notifyCalibrationObservers(calCurve[3], calCurve[2], calCurve[1], calCurve[0]);
