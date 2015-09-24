@@ -19,11 +19,16 @@
 //               INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES.
 package org.micromanager.saim;
 
+import ij.gui.GenericDialog;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.prefs.Preferences;
+import java.lang.Math;
+import java.text.DecimalFormat;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JFileChooser;
@@ -32,12 +37,17 @@ import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import javax.swing.JToggleButton;
+import javax.swing.SpinnerNumberModel;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import mmcorej.CMMCore;
+import mmcorej.TaggedImage;
 import net.miginfocom.swing.MigLayout;
-import org.micromanager.MMStudio;
 import org.micromanager.api.ScriptInterface;
 import org.micromanager.saim.gui.GuiUtils;
 import org.micromanager.utils.FileDialogs;
+import org.micromanager.MMStudio;
+import org.micromanager.utils.MMScriptException;
 
 /**
  *
@@ -49,16 +59,32 @@ public class FlatFieldPanel extends JPanel implements ICalibrationObserver {
     CMMCore core_;
     Preferences prefs_;
 
+    private final String ANGLESTEPSIZE = "acq.anglestepsize";
+    private final String STARTANGLE = "acq.startangle";
+    private final String DOUBLEZERO = "acq.doulbezero";
+    private final String SAVEIMAGES = "acq.saveimages";
     private final String DIRROOT = "acq.dirroot";
     private final String NAMEPREFIX = "acq.nameprefix";
+    private final String COEFF3 = "acq.coeff3";
+    private final String COEFF2 = "acq.coeff2";
+    private final String COEFF1 = "acq.coeff1";
+    private final String COEFF0 = "acq.coeff0";
 
+    private final JSpinner angleStepSizeSpinner_;
+    private final JTextField startAngleField_;
+    private final JCheckBox doubleZeroCheckBox_;
     private final JPanel calPanel_;
-    
+    private final JCheckBox saveImagesCheckBox_;
+
     private final JFileChooser dirRootChooser_;
     private final JTextField dirRootField_;
     private final JButton dirRootButton_;
     private final JTextField namePrefixField_;
     private final JToggleButton runButton_;
+    private JTextField coeff3Field_;
+    private JTextField coeff2Field_;
+    private JTextField coeff1Field_;
+    private JTextField coeff0Field_;
 
     public FlatFieldPanel(ScriptInterface gui, Preferences prefs) {
         super(new MigLayout(
@@ -69,16 +95,117 @@ public class FlatFieldPanel extends JPanel implements ICalibrationObserver {
         prefs_ = prefs;
         this.setName("FlatField");
 
+        // Setup Panel
+        JPanel setupPanel = new JPanel(new MigLayout(
+                "", ""));
+        setupPanel.setBorder(GuiUtils.makeTitledBorder("Setup"));
+        final Dimension componentSize = new Dimension(150, 30);
+
+        // set angle step size
+        setupPanel.add(new JLabel("Angle Step Size (degrees):"));
+        angleStepSizeSpinner_ = new JSpinner(new SpinnerNumberModel(
+                prefs_.getDouble(ANGLESTEPSIZE, 100), 0, 180, 0.1));
+        angleStepSizeSpinner_.addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                prefs_.putDouble(ANGLESTEPSIZE, (Double) angleStepSizeSpinner_.getValue());
+            }
+        });
+        setupPanel.add(angleStepSizeSpinner_, "span, growx, wrap");
+
+        // set start angle
+        setupPanel.add(new JLabel("Start Angle:"));
+        startAngleField_ = new JTextField(
+                prefs_.get(STARTANGLE, "0"));
+        setTextAttributes(startAngleField_, componentSize);
+        startAngleField_.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                prefs_.put(STARTANGLE, startAngleField_.getText());
+            }
+        });
+        setupPanel.add(startAngleField_, "span, growx, wrap");
+        setupPanel.add(new JLabel("Start angle must be divisible by angle step size."), "span 2, wrap");
+
+        // set double zero position
+        doubleZeroCheckBox_ = new JCheckBox("Double Zero Position");
+        doubleZeroCheckBox_.setSelected(true);
+        doubleZeroCheckBox_.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (doubleZeroCheckBox_.isSelected()) {
+                    prefs_.putBoolean(DOUBLEZERO, true);
+                } else {
+                    prefs_.putBoolean(DOUBLEZERO, false);
+                }
+            }
+        });
+        setupPanel.add(doubleZeroCheckBox_, "span 2, growx, wrap");
+
         // Calibration Values
         calPanel_ = new JPanel(new MigLayout(
                 "", ""));
         calPanel_.setBorder(GuiUtils.makeTitledBorder("Calibration Values"));
-        final Dimension componentSize = new Dimension(150, 30);
+        final Dimension calBoxSize = new Dimension(130, 30);
 
-        // Acquire Panel
-        JPanel acquirePanel = new JPanel(new MigLayout(
+        //Set calibration values
+        //x3 coefficient
+        calPanel_.add(new JLabel("x^3: "));
+        coeff3Field_ = new JTextField(
+                prefs_.get(COEFF3, ""));
+        setTextAttributes(coeff3Field_, componentSize);
+        coeff3Field_.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                prefs_.put(COEFF3, coeff3Field_.getText());
+            }
+        });
+        calPanel_.add(coeff3Field_, "span, center, wrap");
+
+        //x2 coefficient
+        calPanel_.add(new JLabel("x^2: "));
+        coeff2Field_ = new JTextField(
+                prefs_.get(COEFF2, ""));
+        setTextAttributes(coeff2Field_, componentSize);
+        coeff2Field_.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                prefs_.put(COEFF2, coeff2Field_.getText());
+            }
+        });
+        calPanel_.add(coeff2Field_, "span, center, wrap");
+
+        //x coefficient
+        calPanel_.add(new JLabel("x: "));
+        coeff1Field_ = new JTextField(
+                prefs_.get(COEFF1, ""));
+        setTextAttributes(coeff1Field_, componentSize);
+        coeff1Field_.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                prefs_.put(COEFF3, coeff1Field_.getText());
+            }
+        });
+        calPanel_.add(coeff1Field_, "span, center, wrap");
+
+        //x0 constant
+        calPanel_.add(new JLabel("x^0: "));
+        coeff0Field_ = new JTextField(
+                prefs_.get(COEFF0, ""));
+        setTextAttributes(coeff0Field_, componentSize);
+        coeff0Field_.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                prefs_.put(COEFF0, coeff0Field_.getText());
+            }
+        });
+        calPanel_.add(coeff0Field_, "span, center, wrap");
+
+        // FlatField Panel
+        JPanel flatfieldPanel = new JPanel(new MigLayout(
                 "", ""));
-        acquirePanel.setBorder(GuiUtils.makeTitledBorder("Acquire"));
+        flatfieldPanel.setBorder(GuiUtils.makeTitledBorder("FlatField"));
+        final Dimension acqBoxSize = new Dimension(130, 30);
 
         // set directory root file chooser
         dirRootChooser_ = new JFileChooser(
@@ -89,23 +216,25 @@ public class FlatFieldPanel extends JPanel implements ICalibrationObserver {
         dirRootChooser_.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                prefs_.putDouble(DIRROOT, Integer.parseInt(dirRootChooser_.getName()));
+                prefs_.put(DIRROOT, dirRootChooser_.getName());
             }
         });
 
         // set directory root text field
-        acquirePanel.add(new JLabel("Directory Root:"));
+        flatfieldPanel.add(new JLabel("Selecting \"Run FlatField\" will prompt you to take"), "span, wrap");
+        flatfieldPanel.add(new JLabel("SAIM acquisitions at five positions for correction"), "span, wrap");
+        flatfieldPanel.add(new JLabel("of final images."), "span, wrap" );
+        flatfieldPanel.add(new JLabel("Directory Root:"));
         dirRootField_ = new JTextField(
                 prefs_.get(DIRROOT, ""));
         setTextAttributes(dirRootField_, componentSize);
         dirRootField_.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                prefs_.put(DIRROOT,
-                        dirRootField_.getText());
+                prefs_.put(DIRROOT, dirRootField_.getText());
             }
         });
-        acquirePanel.add(dirRootField_);
+        flatfieldPanel.add(dirRootField_);
 
         //set directory chooser button
         dirRootButton_ = new JButton("...");
@@ -115,59 +244,55 @@ public class FlatFieldPanel extends JPanel implements ICalibrationObserver {
                 setRootDirectory();
             }
         });
-        acquirePanel.add(dirRootButton_, "wrap");
+        flatfieldPanel.add(dirRootButton_, "wrap");
 
         // set name prefix
-        acquirePanel.add(new JLabel("Name Prefix:"));
+        flatfieldPanel.add(new JLabel("Name Prefix:"));
         namePrefixField_ = new JTextField(
                 prefs_.get(NAMEPREFIX, ""));
         setTextAttributes(namePrefixField_, componentSize);
         namePrefixField_.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                prefs_.put(NAMEPREFIX,
-                        namePrefixField_.getText());
+                prefs_.put(NAMEPREFIX, namePrefixField_.getText());
             }
         });
-        acquirePanel.add(namePrefixField_, "span, growx, wrap");
+        flatfieldPanel.add(namePrefixField_, "span, growx, wrap");
+
+        // set save images
+        saveImagesCheckBox_ = new JCheckBox("Save Images");
+        saveImagesCheckBox_.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (saveImagesCheckBox_.isSelected()) {
+                    prefs_.putBoolean(SAVEIMAGES, true);
+                } else {
+                    prefs_.putBoolean(SAVEIMAGES, false);
+                }
+            }
+        });
+        flatfieldPanel.add(saveImagesCheckBox_, "span 2, growx, wrap");
 
         // set run button
-        runButton_ = new JToggleButton("Run Acquisition");
+        runButton_ = new JToggleButton("Run FlatField");
         runButton_.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 // TODO add your handling code here:
                 if (runButton_.isSelected()) {
-                    runButton_.setText("Abort Acquisition");
-                    RunAcquisition();
+                    runButton_.setText("Abort FlatField");
+                    RunFlatField();
                 } else {
-                    runButton_.setText("Run Acquisition");
+                    runButton_.setText("Run FlatField");
                 }
             }
         });
-        acquirePanel.add(runButton_, "span 3, center, wrap");
+        flatfieldPanel.add(runButton_, "span 3, center, wrap");
 
         // Combine them all
+        add(setupPanel, "span, growx, wrap");
         add(calPanel_, "span, growx, wrap");
-        add(acquirePanel, "span, growx, wrap");
-    }
-
-    @Override
-    public void calibrationChanged(double x3, double x2, double x1, double x0) {
-        calPanel_.add(new JLabel(Double.toString(x3) + "x^3"), "span, center, wrap");
-        calPanel_.add(new JLabel(Double.toString(x2) + "x^2"), "span, center, wrap");
-        calPanel_.add(new JLabel(Double.toString(x1) + "x"), "span, center, wrap");
-        calPanel_.add(new JLabel(Double.toString(x0)), "span, center, wrap");
-    }
-
-    protected void setRootDirectory() {
-        File result = FileDialogs.openDir(null,
-                "Please choose a directory root for image data",
-                MMStudio.MM_DATA_SET);
-        if (result != null) {
-            dirRootField_.setText(result.getAbsolutePath());
-            //acqEng_.setRootName(result.getAbsolutePath());
-        }
+        add(flatfieldPanel, "span, growx, wrap");
     }
 
     /**
@@ -181,6 +306,34 @@ public class FlatFieldPanel extends JPanel implements ICalibrationObserver {
         jtf.setMinimumSize(size);
     }
 
+    public void calibrationChanged(double x3, double x2, double x1, double x0) {
+        String coeff0 = new DecimalFormat("0.#########").format(x0);
+        prefs_.put(COEFF0, coeff0);
+        coeff0Field_.setText(coeff0);
+
+        String coeff1 = new DecimalFormat("0.#########").format(x1);
+        prefs_.put(COEFF1, coeff1);
+        coeff1Field_.setText(coeff1);
+
+        String coeff2 = new DecimalFormat("0.#########").format(x2);
+        prefs_.put(COEFF2, coeff2);
+        coeff2Field_.setText(coeff2);
+
+        String coeff3 = new DecimalFormat("0.#########").format(x3);
+        prefs_.put(COEFF3, coeff3);
+        coeff3Field_.setText(coeff3);
+    }
+
+    protected void setRootDirectory() {
+        File result = FileDialogs.openDir(null,
+                "Please choose a directory root for image data",
+                MMStudio.MM_DATA_SET);
+        if (result != null) {
+            dirRootField_.setText(result.getAbsolutePath());
+            //acqEng_.setRootName(result.getAbsolutePath());
+        }
+    }
+
     /**
      * User is supposed to set up the acquisition in the micromanager panel.
      * This function will acquire images at angle positions defined by
@@ -188,12 +341,125 @@ public class FlatFieldPanel extends JPanel implements ICalibrationObserver {
      *
      */
     private void RunAcquisition() {
-        try {
-            core_.setShutterOpen(true);
-            core_.setShutterOpen(false);
-        } catch (Exception ex) {
-            ij.IJ.log(ex.getMessage() + ", Failed to open/close the shutter");
+        double startAngle = Double.parseDouble(startAngleField_.getText());
+        double angleStepSize = prefs_.getDouble(ANGLESTEPSIZE, 0);
+        if (startAngle % angleStepSize == 0) {
+            try {
+                // Set these variables to the correct values and leave
+                final String deviceName = "TITIRF";
+                final String propName = "Position";
+
+                // Usually no need to edit below this line
+                double tempnrAngles = Math.abs(startAngle) * 2 / angleStepSize;
+                int nrAngles = (Integer) Math.round((float) tempnrAngles);
+
+                gui_.closeAllAcquisitions();
+                final String acq = gui_.getUniqueAcquisitionName(namePrefixField_.getText());
+
+                int frames = nrAngles + 1;
+                if (doubleZeroCheckBox_.isSelected()) {
+                    frames = nrAngles + 2;
+                }
+
+                if (saveImagesCheckBox_.isSelected()) {
+                    gui_.openAcquisition(acq,
+                            dirRootField_.getText(), 1, 1, frames, 1,
+                            true, // Show
+                            true); // Save <--change this to save files in root directory
+                } else {
+                    gui_.openAcquisition(acq,
+                            dirRootField_.getText(), 1, 1, frames, 1,
+                            true, // Show
+                            false); // Save <--change this to save files in root directory
+                }
+
+                // First take images from start to 90 degrees
+                double pos = startAngle;
+                double nrAngles1 = nrAngles / 2;
+                for (int a = 0;
+                        a <= nrAngles1;
+                        a++) {
+                    double val = tirfPosFromAngle(pos);
+                    gui_.message("Image: " + Integer.toString(a) + ", angle: " + Double.toString(pos) + ", val: " + Double.toString(val));
+                    core_.setProperty(deviceName, propName, val);
+                    core_.waitForDevice(deviceName);
+                    //gui.sleep(250);
+                    core_.snapImage();
+                    TaggedImage taggedImg = core_.getTaggedImage();
+                    taggedImg.tags.put("Angle", pos);
+                    gui_.addImageToAcquisition(acq, 0, 0, a, 0, taggedImg);
+                    pos += angleStepSize;
+                }
+
+                // if doubleZeroCheckBox is selected, take images from 0 degrees
+                //to (0 - startposition) degrees
+                double pos1 = angleStepSize;
+                double nrAngles2 = nrAngles / 2;
+                if (doubleZeroCheckBox_.isSelected()) {
+                    pos1 = 0;
+                    nrAngles2 = nrAngles / 2 + 1;
+                }
+
+                for (int b = 0;
+                        b <= nrAngles1 + nrAngles2;
+                        b++) {
+                    double val = tirfPosFromAngle(pos1);
+                    gui_.message("Image: " + Integer.toString(b) + ", angle: " + Double.toString(pos1) + ", val: " + Double.toString(val));
+                    core_.setProperty(deviceName, propName, val);
+                    core_.waitForDevice(deviceName);
+                    //gui.sleep(250);
+                    core_.snapImage();
+                    TaggedImage taggedImg = core_.getTaggedImage();
+                    taggedImg.tags.put("Angle", pos1);
+                    gui_.addImageToAcquisition(acq, 0, 0, b, 0, taggedImg);
+                    pos1 += angleStepSize;
+                }
+
+                gui_.closeAcquisition(acq);
+            } catch (Exception ex) {
+                //ex.printStackTrace();
+                ij.IJ.log(ex.getMessage());
+                ij.IJ.error("Something went wrong.  Aborting!");
+            } finally {
+                runButton_.setSelected(false);
+                runButton_.setText("Run FlatField");
+            }
+        } else {
+            ij.IJ.error("Start angle is not divisible by angle step size!");
+            runButton_.setSelected(false);
+            runButton_.setText("Run FlatField");
         }
     }
 
-}
+    private int tirfPosFromAngle(double angle) {
+        // TirfPosition = slope * angle plus Offset
+        // Output motor position must be an integer to be interpreted by TITIRF
+
+        double tempPos = (Double.parseDouble(coeff3Field_.getText()) * Math.pow(angle, 3)
+                + Double.parseDouble(coeff2Field_.getText()) * Math.pow(angle, 2)
+                + Double.parseDouble(coeff1Field_.getText()) * angle
+                + Double.parseDouble(coeff0Field_.getText()));
+        int pos = Math.round((float) tempPos);
+        return pos;
+    }
+
+     /**
+     * User is supposed to set up the acquisition in the micromanager panel.
+     * This function will prompt the user to move the stage to 5 positions and
+     * will acquire a SAIM scan (RunAcquisition) at each position
+     *
+     */
+    private void RunFlatField() {
+        for (int i = 1; i < 6; i++) {
+            GenericDialog okWindow = new GenericDialog("FlatField Image " + Integer.toString(i));
+            okWindow.addMessage("Move stage to new position and click OK to start acquisition.");
+            okWindow.showDialog();
+            if (okWindow.wasCanceled()) {
+                runButton_.setSelected(false);
+                runButton_.setText("Run FlatField");
+                break;
+            }
+            RunAcquisition();
+            }
+        }
+    }
