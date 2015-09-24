@@ -24,6 +24,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.prefs.Preferences;
+import java.lang.Math;
+import java.text.DecimalFormat;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JFileChooser;
@@ -58,6 +60,10 @@ public class AcquisitionPanel extends JPanel implements ICalibrationObserver{
     private final String DOUBLEZERO = "acq.doulbezero";
     private final String DIRROOT = "acq.dirroot";
     private final String NAMEPREFIX = "acq.nameprefix";
+    private final String COEFF3 = "acq.coeff3";
+    private final String COEFF2 = "acq.coeff2";
+    private final String COEFF1 = "acq.coeff1";
+    private final String COEFF0 = "acq.coeff0";
 
     private final JSpinner angleStepSizeSpinner_;
     private final JTextField startAngleField_;
@@ -70,6 +76,10 @@ public class AcquisitionPanel extends JPanel implements ICalibrationObserver{
     private final JButton dirRootButton_;
     private final JTextField namePrefixField_;
     private final JToggleButton runButton_;
+    private JTextField coeff3Field_;
+    private JTextField coeff2Field_;
+    private JTextField coeff1Field_;
+    private JTextField coeff0Field_;
 
     public AcquisitionPanel(ScriptInterface gui, Preferences prefs) {
         super(new MigLayout(
@@ -84,7 +94,6 @@ public class AcquisitionPanel extends JPanel implements ICalibrationObserver{
         JPanel setupPanel = new JPanel(new MigLayout(
                 "", ""));
         setupPanel.setBorder(GuiUtils.makeTitledBorder("Setup"));
-
         final Dimension componentSize = new Dimension(150, 30);
 
         // set angle step size
@@ -146,9 +155,63 @@ public class AcquisitionPanel extends JPanel implements ICalibrationObserver{
                 "", ""));
         calPanel_.setBorder(GuiUtils.makeTitledBorder("Calibration Values"));
         final Dimension calBoxSize = new Dimension(130, 30);
-        
+
         //Set calibration values
-        
+        //x3 coefficient
+        calPanel_.add(new JLabel("x^3: "));
+        coeff3Field_ = new JTextField(
+                prefs_.get(COEFF3, ""));
+        setTextAttributes(coeff3Field_, componentSize);
+        coeff3Field_.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                prefs_.put(COEFF3,
+                        coeff3Field_.getText());
+            }
+        });
+        calPanel_.add(coeff3Field_, "span, center, wrap");
+
+        //x2 coefficient
+        calPanel_.add(new JLabel("x^2: "));
+        coeff2Field_ = new JTextField(
+                prefs_.get(COEFF2, ""));
+        setTextAttributes(coeff2Field_, componentSize);
+        coeff2Field_.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                prefs_.put(COEFF2,
+                        coeff2Field_.getText());
+            }
+        });
+        calPanel_.add(coeff2Field_, "span, center, wrap");
+
+        //x coefficient
+        calPanel_.add(new JLabel("x: "));
+        coeff1Field_ = new JTextField(
+                prefs_.get(COEFF1, ""));
+        setTextAttributes(coeff1Field_, componentSize);
+        coeff1Field_.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                prefs_.put(COEFF3,
+                        coeff1Field_.getText());
+            }
+        });
+        calPanel_.add(coeff1Field_, "span, center, wrap");
+
+        //x0 constant
+        calPanel_.add(new JLabel("x^0: "));
+        coeff0Field_ = new JTextField(
+                prefs_.get(COEFF0, ""));
+        setTextAttributes(coeff0Field_, componentSize);
+        coeff0Field_.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                prefs_.put(COEFF0,
+                        coeff0Field_.getText());
+            }
+        });
+        calPanel_.add(coeff0Field_, "span, center, wrap");
         
         // Acquire Panel
         JPanel acquirePanel = new JPanel(new MigLayout(
@@ -239,27 +302,24 @@ public class AcquisitionPanel extends JPanel implements ICalibrationObserver{
         jtf.setHorizontalAlignment(JTextField.RIGHT);
         jtf.setMinimumSize(size);
     }
-    
-    /**
-     * User is supposed to set up the acquisition in the micromanager panel.
-     * This function will acquire images at angle positions defined by
-     * calibration.
-     *
-     */
-    private void RunAcquisition() {
-        try {
-            core_.setShutterOpen(true);
-            core_.setShutterOpen(false);
-        } catch (Exception ex) {
-            ij.IJ.log(ex.getMessage() + ", Failed to open/close the shutter");
-        }
-    }
+   
 
     public void calibrationChanged(double x3, double x2, double x1, double x0){
-        calPanel_.add(new JLabel(Double.toString(x3) + "x^3"), "span, center, wrap");
-        calPanel_.add(new JLabel(Double.toString(x2)+ "x^2"), "span, center, wrap");
-        calPanel_.add(new JLabel(Double.toString(x1)+ "x"), "span, center, wrap");
-        calPanel_.add(new JLabel(Double.toString(x0)), "span, center, wrap");
+        String coeff0 = new DecimalFormat("0.#########").format(x0);
+        prefs_.put(COEFF0, coeff0);
+        coeff0Field_.setText(coeff0);
+        
+        String coeff1 = new DecimalFormat("0.#########").format(x1);
+        prefs_.put(COEFF1, coeff1);
+        coeff1Field_.setText(coeff1);
+
+        String coeff2 = new DecimalFormat("0.#########").format(x2);
+        prefs_.put(COEFF2, coeff2);
+        coeff2Field_.setText(coeff2);
+
+        String coeff3 = new DecimalFormat("0.#########").format(x3);
+        prefs_.put(COEFF3, coeff3);
+        coeff3Field_.setText(coeff3);
     }
     
     protected void setRootDirectory() {
@@ -270,6 +330,80 @@ public class AcquisitionPanel extends JPanel implements ICalibrationObserver{
             dirRootField_.setText(result.getAbsolutePath());
             //acqEng_.setRootName(result.getAbsolutePath());
         }
+    }
+
+    /**
+     * User is supposed to set up the acquisition in the micromanager panel.
+     * This function will acquire images at angle positions defined by
+     * calibration.
+     *
+     */
+    private void RunAcquisition() {
+
+//        private static double tirfPosFromAngle (double angle) {
+//	 // TirfPosition = slope * angle plus Offset
+//            x3coeff = 0.016838755631180584; //*Math.pow(10,exponent);
+//            x2coeff = 0.07731206778126176; //*Math.pow(10,exponent);
+//            x1coeff = -370.17939250464156;
+//            x0coeff = 31720.055884293408;
+//
+//            double pos = x3coeff * Math.pow(angle, 3)
+//                    + x2coeff * Math.pow(angle, 2)
+//                    + x1coeff * angle
+//                    + x0coeff;
+//            return pos;
+//        }
+//
+//        // Set these variables to the correct values and leave
+//        deviceName = "TITIRF";
+//        propName = "Position";
+//
+// // Usually no need to edit below this line
+//        pos = STARTANGLE;
+//        endAngle = -1 * STARTANGLE;
+//        nrAngles = Math.abs(STARTANGLE) * 2 / ANGLESTEPSIZE;
+//
+//        gui_.closeAllAcquisitions();
+//        acq = gui_.getUniqueAcquisitionName(NAMEPREFIX);
+//        gui_.openAcquisition(acq, "", 1, 1, nrAngles + 2, 1,
+//                true, // Show
+//                false); // Save
+//
+//// First take images from start to 90 degrees
+//        pos = STARTANGLE;
+//        nrAngles1 = nrAngles / 2;
+//        int image = 0;
+//        for (; image <= nrAngles1; image++) {
+//            val = tirfPosFromAngle(pos);
+//            gui_.message("Image: " + image + ", angle: " + pos + ", val: " + val);
+//            core_.setProperty(deviceName, propName, val);
+//            core_.waitForDevice(deviceName);
+//            //gui.sleep(250);
+//            core_.snapImage();
+//            taggedImg = core_.getTaggedImage();
+//            taggedImg.tags.put("Angle", pos);
+//            gui_.addImageToAcquisition(acq, 0, 0, image, 0, taggedImg);
+//            pos += angleStepSize;
+//        }
+//
+//// then take images from 0 degrees to (0 - startposition) degrees
+//        pos = 0;
+//        nrAngles2 = nrAngles / 2 + 1;
+//        for (; image <= nrAngles1 + nrAngles2; image++) {
+//            val = tirfPosFromAngle(pos);
+//            gui_.message("Image: " + image + ", angle: " + pos + ", val: " + val);
+//            core_.setProperty(deviceName, propName, val);
+//            core_.waitForDevice(deviceName);
+//            //gui.sleep(250);
+//            core_.snapImage();
+//            taggedImg = core_.getTaggedImage();
+//            taggedImg.tags.put("Angle", pos);
+//            gui_.addImageToAcquisition(acq, 0, 0, image, 0, taggedImg);
+//            pos += angleStepSize;
+//        }
+//
+//        gui_.closeAcquisition(acq);
+
     }
 
 }
