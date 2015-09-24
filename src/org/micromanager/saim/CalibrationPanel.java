@@ -254,7 +254,7 @@ public class CalibrationPanel extends JPanel {
       });
       calibratePanel.add(runButton_, "span 2, center, wrap");
       
-      fitLabel_ = new JLabel("Polynomial fit result");
+      fitLabel_ = new JLabel("Polynomial fit result: ");
       calibratePanel.add(fitLabel_, "span 2, wrap");
       
       // Combine them all
