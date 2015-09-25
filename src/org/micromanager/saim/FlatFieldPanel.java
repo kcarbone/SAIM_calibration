@@ -221,8 +221,8 @@ public class FlatFieldPanel extends JPanel implements ICalibrationObserver {
         });
 
         // set directory root text field
-        flatfieldPanel.add(new JLabel("Selecting \"Run FlatField\" will prompt you to take"), "span, wrap");
-        flatfieldPanel.add(new JLabel("SAIM acquisitions at five positions for correction"), "span, wrap");
+        flatfieldPanel.add(new JLabel("Selecting \"Run FlatField\" will prompt you to take multiple"), "span, wrap");
+        flatfieldPanel.add(new JLabel("SAIM acquisitions at different positions for correction"), "span, wrap");
         flatfieldPanel.add(new JLabel("of final images."), "span, wrap" );
         flatfieldPanel.add(new JLabel("Directory Root:"));
         dirRootField_ = new JTextField(
@@ -450,10 +450,13 @@ public class FlatFieldPanel extends JPanel implements ICalibrationObserver {
      *
      */
     private void RunFlatField() {
-        for (int i = 1; i < 6; i++) {
-            GenericDialog okWindow = new GenericDialog("FlatField Image " + Integer.toString(i));
+        int count = 1;
+        while (true) {
+            GenericDialog okWindow = new GenericDialog("FlatField Image " + Integer.toString(count));
+            okWindow.setCancelLabel("Done");
             okWindow.addMessage("Move stage to new position and click OK to start acquisition.");
             okWindow.showDialog();
+            count = count + 1;
             if (okWindow.wasCanceled()) {
                 runButton_.setSelected(false);
                 runButton_.setText("Run FlatField");
