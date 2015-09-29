@@ -25,10 +25,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.prefs.Preferences;
-import java.lang.Math;
 import java.text.DecimalFormat;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JFileChooser;
@@ -47,7 +44,6 @@ import org.micromanager.api.ScriptInterface;
 import org.micromanager.saim.gui.GuiUtils;
 import org.micromanager.utils.FileDialogs;
 import org.micromanager.MMStudio;
-import org.micromanager.utils.MMScriptException;
 
 /**
  *
@@ -306,6 +302,7 @@ public class FlatFieldPanel extends JPanel implements ICalibrationObserver {
         jtf.setMinimumSize(size);
     }
 
+    @Override
     public void calibrationChanged(double x3, double x2, double x1, double x0) {
         String coeff0 = new DecimalFormat("0.#########").format(x0);
         prefs_.put(COEFF0, coeff0);
@@ -334,112 +331,104 @@ public class FlatFieldPanel extends JPanel implements ICalibrationObserver {
         }
     }
 
-    /**
-     * User is supposed to set up the acquisition in the micromanager panel.
-     * This function will acquire images at angle positions defined by
-     * calibration.
-     *
-     */
-    private void RunAcquisition() {
-        class acqThread extends Thread {
+   /**
+    * User is supposed to set up the acquisition in the micromanager panel. This
+    * function will acquire images at angle positions defined by calibration.
+    *
+    */
+   private void RunAcquisition() {
+      double startAngle = Double.parseDouble(startAngleField_.getText());
+      double angleStepSize = prefs_.getDouble(ANGLESTEPSIZE, 0);
+      if (startAngle % angleStepSize == 0) {
+         try {
+            // Set these variables to the correct values and leave
+            final String deviceName = "TITIRF";
+            final String propName = "Position";
 
-            acqThread(String threadName) {
-                super(threadName);
+            // Usually no need to edit below this line
+            double tempnrAngles = Math.abs(startAngle) * 2 / angleStepSize;
+            int nrAngles = (Integer) Math.round((float) tempnrAngles);
+
+            gui_.closeAllAcquisitions();
+            final String acq = gui_.getUniqueAcquisitionName(namePrefixField_.getText());
+
+            int frames = nrAngles + 1;
+            if (doubleZeroCheckBox_.isSelected()) {
+               frames = nrAngles + 2;
             }
 
-            @Override
-            public void run() {
-                double startAngle = Double.parseDouble(startAngleField_.getText());
-                double angleStepSize = prefs_.getDouble(ANGLESTEPSIZE, 0);
-                if (startAngle % angleStepSize == 0) {
-                    try {
-                        // Set these variables to the correct values and leave
-                        final String deviceName = "TITIRF";
-                        final String propName = "Position";
+            if (saveImagesCheckBox_.isSelected()) {
+               gui_.openAcquisition(acq,
+                       dirRootField_.getText(), 1, 1, frames, 1,
+                       true, // Show
+                       true); // Save <--change this to save files in root directory
+            } else {
+               gui_.openAcquisition(acq,
+                       dirRootField_.getText(), 1, 1, frames, 1,
+                       true, // Show
+                       false); // Save <--change this to save files in root directory
+            }
 
-                        // Usually no need to edit below this line
-                        double tempnrAngles = Math.abs(startAngle) * 2 / angleStepSize;
-                        int nrAngles = (Integer) Math.round((float) tempnrAngles);
-
-                        gui_.closeAllAcquisitions();
-                        final String acq = gui_.getUniqueAcquisitionName(namePrefixField_.getText());
-
-                        int frames = nrAngles + 1;
-                        if (doubleZeroCheckBox_.isSelected()) {
-                            frames = nrAngles + 2;
-                        }
-
-                        if (saveImagesCheckBox_.isSelected()) {
-                            gui_.openAcquisition(acq,
-                                    dirRootField_.getText(), 1, 1, frames, 1,
-                                    true, // Show
-                                    true); // Save <--change this to save files in root directory
-                        } else {
-                            gui_.openAcquisition(acq,
-                                    dirRootField_.getText(), 1, 1, frames, 1,
-                                    true, // Show
-                                    false); // Save <--change this to save files in root directory
-                        }
-
-                        // First take images from start to 90 degrees
-                        double pos = startAngle;
-                        double nrAngles1 = nrAngles / 2;
-                        for (int a = 0;
-                                a <= nrAngles1;
-                                a++) {
-                            double val = tirfPosFromAngle(pos);
-                            gui_.message("Image: " + Integer.toString(a) + ", angle: " + Double.toString(pos) + ", val: " + Double.toString(val));
-                            core_.setProperty(deviceName, propName, val);
-                            core_.waitForDevice(deviceName);
-                            //gui.sleep(250);
-                            core_.snapImage();
-                            TaggedImage taggedImg = core_.getTaggedImage();
-                            taggedImg.tags.put("Angle", pos);
-                            gui_.addImageToAcquisition(acq, 0, 0, a, 0, taggedImg);
-                            pos += angleStepSize;
-                        }
+            // First take images from start to 90 degrees
+            double pos = startAngle;
+            int nrAngles1 = nrAngles / 2;
+            for (int a = 0;
+                    a <= nrAngles1;
+                    a++) {
+               double val = tirfPosFromAngle(pos);
+               gui_.message("Image: " + Integer.toString(a) + ", angle: " + Double.toString(pos) + ", val: " + Double.toString(val));
+               core_.setProperty(deviceName, propName, val);
+               core_.waitForDevice(deviceName);
+               //gui.sleep(250);
+               core_.snapImage();
+               TaggedImage taggedImg = core_.getTaggedImage();
+               taggedImg.tags.put("Angle", pos);
+               gui_.addImageToAcquisition(acq, 0, 0, a, 0, taggedImg);
+               pos += angleStepSize;
+            }
 
                 // if doubleZeroCheckBox is selected, take images from 0 degrees
-                        //to (0 - startposition) degrees
-                        double pos1 = angleStepSize;
-                        double nrAngles2 = nrAngles / 2;
-                        if (doubleZeroCheckBox_.isSelected()) {
-                            pos1 = 0;
-                            nrAngles2 = nrAngles / 2 + 1;
-                        }
-
-                        for (int b = 0;
-                                b <= nrAngles1 + nrAngles2;
-                                b++) {
-                            double val = tirfPosFromAngle(pos1);
-                            gui_.message("Image: " + Integer.toString(b) + ", angle: " + Double.toString(pos1) + ", val: " + Double.toString(val));
-                            core_.setProperty(deviceName, propName, val);
-                            core_.waitForDevice(deviceName);
-                            //gui.sleep(250);
-                            core_.snapImage();
-                            TaggedImage taggedImg = core_.getTaggedImage();
-                            taggedImg.tags.put("Angle", pos1);
-                            gui_.addImageToAcquisition(acq, 0, 0, b, 0, taggedImg);
-                            pos1 += angleStepSize;
-                        }
-
-                        gui_.closeAcquisition(acq);
-                    } catch (Exception ex) {
-                        //ex.printStackTrace();
-                        ij.IJ.log(ex.getMessage());
-                        ij.IJ.error("Something went wrong.  Aborting!");
-                    } finally {
-                        runButton_.setSelected(false);
-                        runButton_.setText("Run FlatField");
-                    }
-                } else {
-                    ij.IJ.error("Start angle is not divisible by angle step size!");
-                    runButton_.setSelected(false);
-                    runButton_.setText("Run FlatField");
-                }
+            //to (0 - startposition) degrees
+            double pos1 = angleStepSize;
+            int nrAngles2 = nrAngles / 2;
+            if (doubleZeroCheckBox_.isSelected()) {
+               pos1 = 0;
+               nrAngles2 = nrAngles / 2 + 1;
             }
-        }
-    }
+
+            for (int b = 0;
+                    b <= nrAngles2;
+                    b++) {
+               double val = tirfPosFromAngle(pos1);
+               gui_.message("Image: " + Integer.toString(b) + ", angle: " + Double.toString(pos1) + ", val: " + Double.toString(val));
+               core_.setProperty(deviceName, propName, val);
+               core_.waitForDevice(deviceName);
+               //gui.sleep(250);
+               core_.snapImage();
+               TaggedImage taggedImg = core_.getTaggedImage();
+               taggedImg.tags.put("Angle", pos1);
+               gui_.addImageToAcquisition(acq, 0, 0, b + nrAngles1, 0, taggedImg);
+               pos1 += angleStepSize;
+            }
+
+            gui_.closeAcquisition(acq);
+         } catch (Exception ex) {
+            //ex.printStackTrace();
+            ij.IJ.log(ex.getMessage());
+            ij.IJ.error("Something went wrong.  Aborting!");
+         } finally {
+            runButton_.setSelected(false);
+            runButton_.setText("Run FlatField");
+         }
+      } else {
+         ij.IJ.error("Start angle is not divisible by angle step size!");
+         runButton_.setSelected(false);
+         runButton_.setText("Run FlatField");
+      }
+   }
+
+
+
 
     private int tirfPosFromAngle(double angle) {
         // TirfPosition = slope * angle plus Offset
@@ -459,20 +448,34 @@ public class FlatFieldPanel extends JPanel implements ICalibrationObserver {
      * will acquire a SAIM scan (RunAcquisition) at each position
      *
      */
-    private void RunFlatField() {
-        int count = 1;
-        while (true) {
-            GenericDialog okWindow = new GenericDialog("FlatField Image " + Integer.toString(count));
-            okWindow.setCancelLabel("Done");
-            okWindow.addMessage("Move stage to new position and click OK to start acquisition.");
-            okWindow.showDialog();
-            count = count + 1;
-            if (okWindow.wasCanceled()) {
-                runButton_.setSelected(false);
-                runButton_.setText("Run FlatField");
-                break;
+   private void RunFlatField() {
+
+      class AcqThread extends Thread {
+
+         AcqThread(String threadName) {
+            super(threadName);
+         }
+
+         @Override
+         public void run() {
+            int count = 1;
+            while (true) {
+               GenericDialog okWindow = new GenericDialog("FlatField Image " + Integer.toString(count));
+               okWindow.setCancelLabel("Done");
+               okWindow.addMessage("Move stage to new position and click OK to start acquisition.");
+               okWindow.showDialog();
+               count = count + 1;
+               if (okWindow.wasCanceled()) {
+                  runButton_.setSelected(false);
+                  runButton_.setText("Run FlatField");
+                  break;
+               }
+               RunAcquisition();
             }
-            RunAcquisition();
-            }
-        }
-    }
+         }
+      }
+      AcqThread acqT = new AcqThread("SAIM Acquisition");
+      acqT.start();
+
+   }
+}

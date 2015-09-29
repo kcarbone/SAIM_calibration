@@ -140,7 +140,7 @@ public class CalibrationPanel extends JPanel {
       // set motor position
       setupPanel.add(new JLabel("Set 0 Deg. Motor Position:"));
       motorPosField_ = new JTextField( 
-              Integer.toString(prefs_.getInt(MOTORPOS, 0)));
+              Integer.toString(prefs_.getInt(MOTORPOS, 31640)));
       setTextAttributes(motorPosField_, componentSize);
       motorPosField_.addActionListener(new ActionListener() {
          @Override
@@ -204,7 +204,7 @@ public class CalibrationPanel extends JPanel {
       // start motor position
       calibratePanel.add(new JLabel("Start Motor Position:"));
       startMotorPosField_ = new JTextField(
-              ((Integer) (prefs_.getInt(STARTMOTORPOS, 0))).toString());
+              ((Integer) (prefs_.getInt(STARTMOTORPOS, 13000))).toString());
       setTextAttributes(startMotorPosField_, calBoxSize);
       startMotorPosField_.addActionListener(new ActionListener() {
          @Override
@@ -217,7 +217,7 @@ public class CalibrationPanel extends JPanel {
       
       calibratePanel.add(new JLabel("End Motor Position:"));
       endMotorPosField_ = new JTextField(
-              ((Integer) (prefs_.getInt(ENDMOTORPOS, 100))).toString());
+              ((Integer) (prefs_.getInt(ENDMOTORPOS, 50000))).toString());
       setTextAttributes(endMotorPosField_, calBoxSize);
       endMotorPosField_.addActionListener(new ActionListener() {
          @Override
@@ -375,9 +375,9 @@ public class CalibrationPanel extends JPanel {
     */
    private void RunCalibration() {
 
-      class calThread extends Thread {
+      class CalThread extends Thread {
 
-         calThread(String threadName) {
+         CalThread(String threadName) {
             super(threadName);
          }
 
@@ -470,7 +470,7 @@ public class CalibrationPanel extends JPanel {
       }
       
       
-      calThread calt = new calThread("SAIM Callibration");
+      CalThread calt = new CalThread("SAIM Callibration");
       calt.start();
    }
 
