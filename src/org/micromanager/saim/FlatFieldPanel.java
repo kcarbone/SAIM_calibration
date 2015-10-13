@@ -19,13 +19,22 @@
 //               INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES.
 package org.micromanager.saim;
 
+import ij.ImagePlus;
+import ij.ImageStack;
 import ij.gui.GenericDialog;
+import ij.plugin.ZProjector;
+import ij.process.ImageConverter;
+import ij.process.ImageProcessor;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.prefs.Preferences;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JFileChooser;
@@ -44,6 +53,12 @@ import org.micromanager.api.ScriptInterface;
 import org.micromanager.saim.gui.GuiUtils;
 import org.micromanager.utils.FileDialogs;
 import org.micromanager.MMStudio;
+import org.micromanager.acquisition.MMAcquisition;
+import org.micromanager.acquisition.MMImageCache;
+import org.micromanager.api.ImageCache;
+import org.micromanager.utils.ImageUtils;
+import org.micromanager.utils.MDUtils;
+import org.micromanager.utils.MMScriptException;
 
 /**
  *
@@ -336,9 +351,10 @@ public class FlatFieldPanel extends JPanel implements ICalibrationObserver {
     * function will acquire images at angle positions defined by calibration.
     *
     */
-   private void RunAcquisition() {
+   private String RunAcquisition() {
       double startAngle = Double.parseDouble(startAngleField_.getText());
       double angleStepSize = prefs_.getDouble(ANGLESTEPSIZE, 0);
+      String acq = "";
       if (startAngle % angleStepSize == 0) {
          try {
             // Set these variables to the correct values and leave
@@ -349,8 +365,8 @@ public class FlatFieldPanel extends JPanel implements ICalibrationObserver {
             double tempnrAngles = Math.abs(startAngle) * 2 / angleStepSize;
             int nrAngles = (Integer) Math.round((float) tempnrAngles);
 
-            gui_.closeAllAcquisitions();
-            final String acq = gui_.getUniqueAcquisitionName(namePrefixField_.getText());
+            //gui_.closeAllAcquisitions();
+            acq = gui_.getUniqueAcquisitionName(namePrefixField_.getText());
 
             int frames = nrAngles + 1;
             if (doubleZeroCheckBox_.isSelected()) {
@@ -411,7 +427,7 @@ public class FlatFieldPanel extends JPanel implements ICalibrationObserver {
                pos1 += angleStepSize;
             }
 
-            gui_.closeAcquisition(acq);
+            //gui_.closeAcquisition(acq);
          } catch (Exception ex) {
             //ex.printStackTrace();
             ij.IJ.log(ex.getMessage());
@@ -425,6 +441,7 @@ public class FlatFieldPanel extends JPanel implements ICalibrationObserver {
          runButton_.setSelected(false);
          runButton_.setText("Run FlatField");
       }
+      return acq;
    }
 
 
@@ -459,6 +476,7 @@ public class FlatFieldPanel extends JPanel implements ICalibrationObserver {
          @Override
          public void run() {
             int count = 1;
+            List<String> acqs = new ArrayList<String>();
             while (true) {
                GenericDialog okWindow = new GenericDialog("FlatField Image " + Integer.toString(count));
                okWindow.setCancelLabel("Done");
@@ -470,10 +488,55 @@ public class FlatFieldPanel extends JPanel implements ICalibrationObserver {
                   runButton_.setText("Run FlatField");
                   break;
                }
-               RunAcquisition();
+               acqs.add(RunAcquisition());
+
+            }
+            //start with list of acqs, calculate median
+            if (acqs.isEmpty()) {
+               return;
+            }
+            try {
+               String acq = gui_.getUniqueAcquisitionName("Flatfield");
+               String[] availableNames = gui_.getAcquisitionNames();
+               MMAcquisition mAcq = gui_.getAcquisition(acqs.get(0));
+               ImageCache cache = gui_.getAcquisitionImageCache(acqs.get(0));
+               gui_.openAcquisition(acq,
+                       dirRootField_.getText(), 1, 1, mAcq.getSlices(), 1,
+                       true, // Show
+                       true); // Save <--change this to save files in root directory
+               for (int slice = 0; slice < mAcq.getSlices(); slice++) {
+                  // gui_.addImageToAcquisition(acq, 0, 0, slice, 0, cache.getImage(0, 0, slice, 0));
+                  ImageStack stack = new ImageStack(mAcq.getWidth(), mAcq.getHeight(), acqs.size());
+                  for (int xyPos = 0; xyPos < acqs.size(); xyPos++) {
+                     ImageProcessor proc = ImageUtils.makeProcessor(
+                             gui_.getAcquisitionImageCache(acqs.get(xyPos)).getImage(0, slice, 0, 0));
+                     stack.setProcessor(proc, xyPos + 1);
+                  }
+                  //make median image from set of ImageProcessors
+                  ImagePlus iPlus = new ImagePlus("t", stack);
+                  ZProjector zProj = new ZProjector(iPlus);
+                  zProj.setMethod(ZProjector.MEDIAN_METHOD);
+                  zProj.doProjection();
+                  ImagePlus median = zProj.getProjection();
+                  // the projection gives a 32 bit result.  Convert to 16 bit so that we can stick it back into our acquisition
+                  ImageConverter ic = new ImageConverter(median);
+                  ic.convertToGray16();
+                  TaggedImage tImg = ImageUtils.makeTaggedImage(median.getProcessor());
+                  MDUtils.setPixelType(tImg.tags, median.getType());
+                  gui_.addImageToAcquisition(acq, 0, 0, slice, 0, tImg);
+               }
+            } catch (MMScriptException ex) {
+               ex.printStackTrace();
+               ij.IJ.error("Something went wrong while calculating median image");
+            } catch (Exception ex) {
+               ex.printStackTrace();
+            }
+            finally {
+               gui_.closeAllAcquisitions();
             }
          }
       }
+      
       AcqThread acqT = new AcqThread("SAIM Acquisition");
       acqT.start();
 
