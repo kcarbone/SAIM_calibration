@@ -64,7 +64,7 @@ import org.micromanager.utils.MMScriptException;
  *
  * @author nico
  */
-public class FlatFieldPanel extends JPanel implements ICalibrationObserver {
+public class FlatFieldPanel extends JPanel implements ICalibrationObserver, ISettingsObserver {
 
     ScriptInterface gui_;
     CMMCore core_;
@@ -80,6 +80,8 @@ public class FlatFieldPanel extends JPanel implements ICalibrationObserver {
     private final String COEFF2 = "acq.coeff2";
     private final String COEFF1 = "acq.coeff1";
     private final String COEFF0 = "acq.coeff0";
+    private final String DEVICENAME = "acq.devicename";
+    private final String POSPROPNAME = "acq.pospropname";
 
     private final JSpinner angleStepSizeSpinner_;
     private final JTextField startAngleField_;
@@ -234,7 +236,7 @@ public class FlatFieldPanel extends JPanel implements ICalibrationObserver {
         // set directory root text field
         flatfieldPanel.add(new JLabel("Selecting \"Run FlatField\" will prompt you to take multiple"), "span, wrap");
         flatfieldPanel.add(new JLabel("SAIM acquisitions at different positions for correction"), "span, wrap");
-        flatfieldPanel.add(new JLabel("of final images."), "span, wrap" );
+        flatfieldPanel.add(new JLabel("of final images."), "span, wrap");
         flatfieldPanel.add(new JLabel("Directory Root:"));
         dirRootField_ = new JTextField(
                 prefs_.get(DIRROOT, ""));
@@ -336,6 +338,12 @@ public class FlatFieldPanel extends JPanel implements ICalibrationObserver {
         coeff3Field_.setText(coeff3);
     }
 
+    @Override
+    public void settingsChanged(String TIRFDeviceName, String TIRFPosPropName) {
+        prefs_.put(DEVICENAME, TIRFDeviceName);
+        prefs_.put(POSPROPNAME, TIRFPosPropName);
+    }
+
     protected void setRootDirectory() {
         File result = FileDialogs.openDir(null,
                 "Please choose a directory root for image data",
@@ -346,106 +354,104 @@ public class FlatFieldPanel extends JPanel implements ICalibrationObserver {
         }
     }
 
-   /**
-    * User is supposed to set up the acquisition in the micromanager panel. This
-    * function will acquire images at angle positions defined by calibration.
-    *
-    */
-   private String RunAcquisition() {
-      double startAngle = Double.parseDouble(startAngleField_.getText());
-      double angleStepSize = prefs_.getDouble(ANGLESTEPSIZE, 0);
-      String acq = "";
-      if (startAngle % angleStepSize == 0) {
-         try {
-            // Set these variables to the correct values and leave
-            final String deviceName = "TITIRF";
-            final String propName = "Position";
+    /**
+     * User is supposed to set up the acquisition in the micromanager panel.
+     * This function will acquire images at angle positions defined by
+     * calibration.
+     *
+     */
+    private String RunAcquisition() {
+        double startAngle = Double.parseDouble(startAngleField_.getText());
+        double angleStepSize = prefs_.getDouble(ANGLESTEPSIZE, 0);
+        String acq = "";
+        if (startAngle % angleStepSize == 0) {
+            try {
+                // Set these variables to the correct values and leave
+                final String deviceName = prefs_.get(DEVICENAME, "");
+                final String propName = prefs_.get(POSPROPNAME, "");
 
-            // Usually no need to edit below this line
-            double tempnrAngles = Math.abs(startAngle) * 2 / angleStepSize;
-            int nrAngles = (Integer) Math.round((float) tempnrAngles);
+                // Usually no need to edit below this line
+                double tempnrAngles = Math.abs(startAngle) * 2 / angleStepSize;
+                int nrAngles = (Integer) Math.round((float) tempnrAngles);
 
-            //gui_.closeAllAcquisitions();
-            acq = gui_.getUniqueAcquisitionName(namePrefixField_.getText());
+                //gui_.closeAllAcquisitions();
+                acq = gui_.getUniqueAcquisitionName(namePrefixField_.getText());
 
-            int frames = nrAngles + 1;
-            if (doubleZeroCheckBox_.isSelected()) {
-               frames = nrAngles + 2;
-            }
+                int frames = nrAngles + 1;
+                if (doubleZeroCheckBox_.isSelected()) {
+                    frames = nrAngles + 2;
+                }
 
-            if (saveImagesCheckBox_.isSelected()) {
-               gui_.openAcquisition(acq,
-                       dirRootField_.getText(), 1, 1, frames, 1,
-                       true, // Show
-                       true); // Save <--change this to save files in root directory
-            } else {
-               gui_.openAcquisition(acq,
-                       dirRootField_.getText(), 1, 1, frames, 1,
-                       true, // Show
-                       false); // Save <--change this to save files in root directory
-            }
+                if (saveImagesCheckBox_.isSelected()) {
+                    gui_.openAcquisition(acq,
+                            dirRootField_.getText(), 1, 1, frames, 1,
+                            true, // Show
+                            true); // Save <--change this to save files in root directory
+                } else {
+                    gui_.openAcquisition(acq,
+                            dirRootField_.getText(), 1, 1, frames, 1,
+                            true, // Show
+                            false); // Save <--change this to save files in root directory
+                }
 
-            // First take images from start to 90 degrees
-            double pos = startAngle;
-            int nrAngles1 = nrAngles / 2;
-            for (int a = 0;
-                    a <= nrAngles1;
-                    a++) {
-               double val = tirfPosFromAngle(pos);
-               gui_.message("Image: " + Integer.toString(a) + ", angle: " + Double.toString(pos) + ", val: " + Double.toString(val));
-               core_.setProperty(deviceName, propName, val);
-               core_.waitForDevice(deviceName);
-               //gui.sleep(250);
-               core_.snapImage();
-               TaggedImage taggedImg = core_.getTaggedImage();
-               taggedImg.tags.put("Angle", pos);
-               gui_.addImageToAcquisition(acq, 0, 0, a, 0, taggedImg);
-               pos += angleStepSize;
-            }
+                // First take images from start to 90 degrees
+                double pos = startAngle;
+                int nrAngles1 = nrAngles / 2;
+                for (int a = 0;
+                        a <= nrAngles1;
+                        a++) {
+                    double val = tirfPosFromAngle(pos);
+                    gui_.message("Image: " + Integer.toString(a) + ", angle: " + Double.toString(pos) + ", val: " + Double.toString(val));
+                    core_.setProperty(deviceName, propName, val);
+                    core_.waitForDevice(deviceName);
+                    //gui.sleep(250);
+                    core_.snapImage();
+                    TaggedImage taggedImg = core_.getTaggedImage();
+                    taggedImg.tags.put("Angle", pos);
+                    gui_.addImageToAcquisition(acq, 0, 0, a, 0, taggedImg);
+                    pos += angleStepSize;
+                }
 
                 // if doubleZeroCheckBox is selected, take images from 0 degrees
-            //to (0 - startposition) degrees
-            double pos1 = angleStepSize;
-            int nrAngles2 = nrAngles / 2;
-            if (doubleZeroCheckBox_.isSelected()) {
-               pos1 = 0;
-               nrAngles2 = nrAngles / 2 + 1;
-            }
+                //to (0 - startposition) degrees
+                double pos1 = angleStepSize;
+                int nrAngles2 = nrAngles / 2;
+                if (doubleZeroCheckBox_.isSelected()) {
+                    pos1 = 0;
+                    nrAngles2 = nrAngles / 2 + 1;
+                }
 
-            for (int b = 0;
-                    b <= nrAngles2;
-                    b++) {
-               double val = tirfPosFromAngle(pos1);
-               gui_.message("Image: " + Integer.toString(b) + ", angle: " + Double.toString(pos1) + ", val: " + Double.toString(val));
-               core_.setProperty(deviceName, propName, val);
-               core_.waitForDevice(deviceName);
-               //gui.sleep(250);
-               core_.snapImage();
-               TaggedImage taggedImg = core_.getTaggedImage();
-               taggedImg.tags.put("Angle", pos1);
-               gui_.addImageToAcquisition(acq, 0, 0, b + nrAngles1, 0, taggedImg);
-               pos1 += angleStepSize;
-            }
+                for (int b = 0;
+                        b <= nrAngles2;
+                        b++) {
+                    double val = tirfPosFromAngle(pos1);
+                    gui_.message("Image: " + Integer.toString(b) + ", angle: " + Double.toString(pos1) + ", val: " + Double.toString(val));
+                    core_.setProperty(deviceName, propName, val);
+                    core_.waitForDevice(deviceName);
+                    //gui.sleep(250);
+                    core_.snapImage();
+                    TaggedImage taggedImg = core_.getTaggedImage();
+                    taggedImg.tags.put("Angle", pos1);
+                    gui_.addImageToAcquisition(acq, 0, 0, b + nrAngles1, 0, taggedImg);
+                    pos1 += angleStepSize;
+                }
 
-            //gui_.closeAcquisition(acq);
-         } catch (Exception ex) {
-            //ex.printStackTrace();
-            ij.IJ.log(ex.getMessage());
-            ij.IJ.error("Something went wrong.  Aborting!");
-         } finally {
+                //gui_.closeAcquisition(acq);
+            } catch (Exception ex) {
+                //ex.printStackTrace();
+                ij.IJ.log(ex.getMessage());
+                ij.IJ.error("Something went wrong.  Aborting!");
+            } finally {
+                runButton_.setSelected(false);
+                runButton_.setText("Run FlatField");
+            }
+        } else {
+            ij.IJ.error("Start angle is not divisible by angle step size!");
             runButton_.setSelected(false);
             runButton_.setText("Run FlatField");
-         }
-      } else {
-         ij.IJ.error("Start angle is not divisible by angle step size!");
-         runButton_.setSelected(false);
-         runButton_.setText("Run FlatField");
-      }
-      return acq;
-   }
-
-
-
+        }
+        return acq;
+    }
 
     private int tirfPosFromAngle(double angle) {
         // TirfPosition = slope * angle plus Offset
@@ -459,86 +465,85 @@ public class FlatFieldPanel extends JPanel implements ICalibrationObserver {
         return pos;
     }
 
-     /**
+    /**
      * User is supposed to set up the acquisition in the micromanager panel.
      * This function will prompt the user to move the stage to 5 positions and
      * will acquire a SAIM scan (RunAcquisition) at each position
      *
      */
-   private void RunFlatField() {
+    private void RunFlatField() {
 
-      class AcqThread extends Thread {
+        class AcqThread extends Thread {
 
-         AcqThread(String threadName) {
-            super(threadName);
-         }
-
-         @Override
-         public void run() {
-            int count = 1;
-            List<String> acqs = new ArrayList<String>();
-            while (true) {
-               GenericDialog okWindow = new GenericDialog("FlatField Image " + Integer.toString(count));
-               okWindow.setCancelLabel("Done");
-               okWindow.addMessage("Move stage to new position and click OK to start acquisition.");
-               okWindow.showDialog();
-               count = count + 1;
-               if (okWindow.wasCanceled()) {
-                  runButton_.setSelected(false);
-                  runButton_.setText("Run FlatField");
-                  break;
-               }
-               acqs.add(RunAcquisition());
-
+            AcqThread(String threadName) {
+                super(threadName);
             }
-            //start with list of acqs, calculate median
-            if (acqs.isEmpty()) {
-               return;
-            }
-            try {
-               String acq = gui_.getUniqueAcquisitionName("Flatfield");
-               String[] availableNames = gui_.getAcquisitionNames();
-               MMAcquisition mAcq = gui_.getAcquisition(acqs.get(0));
-               ImageCache cache = gui_.getAcquisitionImageCache(acqs.get(0));
-               gui_.openAcquisition(acq,
-                       dirRootField_.getText(), 1, 1, mAcq.getSlices(), 1,
-                       true, // Show
-                       true); // Save <--change this to save files in root directory
-               for (int slice = 0; slice < mAcq.getSlices(); slice++) {
-                  // gui_.addImageToAcquisition(acq, 0, 0, slice, 0, cache.getImage(0, 0, slice, 0));
-                  ImageStack stack = new ImageStack(mAcq.getWidth(), mAcq.getHeight(), acqs.size());
-                  for (int xyPos = 0; xyPos < acqs.size(); xyPos++) {
-                     ImageProcessor proc = ImageUtils.makeProcessor(
-                             gui_.getAcquisitionImageCache(acqs.get(xyPos)).getImage(0, slice, 0, 0));
-                     stack.setProcessor(proc, xyPos + 1);
-                  }
-                  //make median image from set of ImageProcessors
-                  ImagePlus iPlus = new ImagePlus("t", stack);
-                  ZProjector zProj = new ZProjector(iPlus);
-                  zProj.setMethod(ZProjector.MEDIAN_METHOD);
-                  zProj.doProjection();
-                  ImagePlus median = zProj.getProjection();
-                  // the projection gives a 32 bit result.  Convert to 16 bit so that we can stick it back into our acquisition
-                  ImageConverter ic = new ImageConverter(median);
-                  ic.convertToGray16();
-                  TaggedImage tImg = ImageUtils.makeTaggedImage(median.getProcessor());
-                  MDUtils.setPixelType(tImg.tags, median.getType());
-                  gui_.addImageToAcquisition(acq, 0, 0, slice, 0, tImg);
-               }
-            } catch (MMScriptException ex) {
-               ex.printStackTrace();
-               ij.IJ.error("Something went wrong while calculating median image");
-            } catch (Exception ex) {
-               ex.printStackTrace();
-            }
-            finally {
-               gui_.closeAllAcquisitions();
-            }
-         }
-      }
-      
-      AcqThread acqT = new AcqThread("SAIM Acquisition");
-      acqT.start();
 
-   }
+            @Override
+            public void run() {
+                int count = 1;
+                List<String> acqs = new ArrayList<String>();
+                while (true) {
+                    GenericDialog okWindow = new GenericDialog("FlatField Image " + Integer.toString(count));
+                    okWindow.setCancelLabel("Done");
+                    okWindow.addMessage("Move stage to new position and click OK to start acquisition.");
+                    okWindow.showDialog();
+                    count = count + 1;
+                    if (okWindow.wasCanceled()) {
+                        runButton_.setSelected(false);
+                        runButton_.setText("Run FlatField");
+                        break;
+                    }
+                    acqs.add(RunAcquisition());
+
+                }
+                //start with list of acqs, calculate median
+                if (acqs.isEmpty()) {
+                    return;
+                }
+                try {
+                    String acq = gui_.getUniqueAcquisitionName("Flatfield");
+                    String[] availableNames = gui_.getAcquisitionNames();
+                    MMAcquisition mAcq = gui_.getAcquisition(acqs.get(0));
+                    ImageCache cache = gui_.getAcquisitionImageCache(acqs.get(0));
+                    gui_.openAcquisition(acq,
+                            dirRootField_.getText(), 1, 1, mAcq.getSlices(), 1,
+                            true, // Show
+                            true); // Save <--change this to save files in root directory
+                    for (int slice = 0; slice < mAcq.getSlices(); slice++) {
+                        // gui_.addImageToAcquisition(acq, 0, 0, slice, 0, cache.getImage(0, 0, slice, 0));
+                        ImageStack stack = new ImageStack(mAcq.getWidth(), mAcq.getHeight(), acqs.size());
+                        for (int xyPos = 0; xyPos < acqs.size(); xyPos++) {
+                            ImageProcessor proc = ImageUtils.makeProcessor(
+                                    gui_.getAcquisitionImageCache(acqs.get(xyPos)).getImage(0, slice, 0, 0));
+                            stack.setProcessor(proc, xyPos + 1);
+                        }
+                        //make median image from set of ImageProcessors
+                        ImagePlus iPlus = new ImagePlus("t", stack);
+                        ZProjector zProj = new ZProjector(iPlus);
+                        zProj.setMethod(ZProjector.MEDIAN_METHOD);
+                        zProj.doProjection();
+                        ImagePlus median = zProj.getProjection();
+                        // the projection gives a 32 bit result.  Convert to 16 bit so that we can stick it back into our acquisition
+                        ImageConverter ic = new ImageConverter(median);
+                        ic.convertToGray16();
+                        TaggedImage tImg = ImageUtils.makeTaggedImage(median.getProcessor());
+                        MDUtils.setPixelType(tImg.tags, median.getType());
+                        gui_.addImageToAcquisition(acq, 0, 0, slice, 0, tImg);
+                    }
+                } catch (MMScriptException ex) {
+                    ex.printStackTrace();
+                    ij.IJ.error("Something went wrong while calculating median image");
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                } finally {
+                    gui_.closeAllAcquisitions();
+                }
+            }
+        }
+
+        AcqThread acqT = new AcqThread("SAIM Acquisition");
+        acqT.start();
+
+    }
 }
