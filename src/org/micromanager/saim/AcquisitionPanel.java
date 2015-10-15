@@ -22,6 +22,8 @@ package org.micromanager.saim;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.io.File;
 import java.util.prefs.Preferences;
 import java.lang.Math;
@@ -52,22 +54,11 @@ import org.micromanager.utils.MMScriptException;
  *
  * @author nico
  */
-public class AcquisitionPanel extends JPanel implements ICalibrationObserver {
+public class AcquisitionPanel extends JPanel {
 
     ScriptInterface gui_;
     CMMCore core_;
     Preferences prefs_;
-
-    private final String ANGLESTEPSIZE = "acq.anglestepsize";
-    private final String STARTANGLE = "acq.startangle";
-    private final String DOUBLEZERO = "acq.doulbezero";
-    private final String SAVEIMAGES = "acq.saveimages";
-    private final String DIRROOT = "acq.dirroot";
-    private final String NAMEPREFIX = "acq.nameprefix";
-    private final String COEFF3 = "acq.coeff3";
-    private final String COEFF2 = "acq.coeff2";
-    private final String COEFF1 = "acq.coeff1";
-    private final String COEFF0 = "acq.coeff0";
 
     private final JSpinner angleStepSizeSpinner_;
     private final JTextField startAngleField_;
@@ -75,10 +66,10 @@ public class AcquisitionPanel extends JPanel implements ICalibrationObserver {
     private final JPanel calPanel_;
     private final JCheckBox saveImagesCheckBox_;
 
-    private final JFileChooser dirRootChooser_;
-    private final JTextField dirRootField_;
-    private final JButton dirRootButton_;
-    private final JTextField namePrefixField_;
+    private final JFileChooser acqdirRootChooser_;
+    private final JTextField acqdirRootField_;
+    private final JButton acqdirRootButton_;
+    private final JTextField acqnamePrefixField_;
     private final JToggleButton runButton_;
     private JTextField coeff3Field_;
     private JTextField coeff2Field_;
@@ -103,11 +94,11 @@ public class AcquisitionPanel extends JPanel implements ICalibrationObserver {
         // set angle step size
         setupPanel.add(new JLabel("Angle Step Size (degrees):"));
         angleStepSizeSpinner_ = new JSpinner(new SpinnerNumberModel(
-                prefs_.getDouble(ANGLESTEPSIZE, 100), 0, 180, 0.1));
+                prefs_.getDouble(PrefStrings.ANGLESTEPSIZE, 100), 0, 180, 0.1));
         angleStepSizeSpinner_.addChangeListener(new ChangeListener() {
             @Override
             public void stateChanged(ChangeEvent e) {
-                prefs_.putDouble(ANGLESTEPSIZE, (Double) angleStepSizeSpinner_.getValue());
+                prefs_.putDouble(PrefStrings.ANGLESTEPSIZE, (Double) angleStepSizeSpinner_.getValue());
             }
         });
         setupPanel.add(angleStepSizeSpinner_, "span, growx, wrap");
@@ -115,12 +106,12 @@ public class AcquisitionPanel extends JPanel implements ICalibrationObserver {
         // set start angle
         setupPanel.add(new JLabel("Start Angle:"));
         startAngleField_ = new JTextField(
-                prefs_.get(STARTANGLE, "0"));
+                prefs_.get(PrefStrings.STARTANGLE, "0"));
         setTextAttributes(startAngleField_, componentSize);
         startAngleField_.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                prefs_.put(STARTANGLE, startAngleField_.getText());
+                prefs_.put(PrefStrings.STARTANGLE, startAngleField_.getText());
             }
         });
         setupPanel.add(startAngleField_, "span, growx, wrap");
@@ -133,9 +124,9 @@ public class AcquisitionPanel extends JPanel implements ICalibrationObserver {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (doubleZeroCheckBox_.isSelected()) {
-                    prefs_.putBoolean(DOUBLEZERO, true);
+                    prefs_.putBoolean(PrefStrings.DOUBLEZERO, true);
                 } else {
-                    prefs_.putBoolean(DOUBLEZERO, false);
+                    prefs_.putBoolean(PrefStrings.DOUBLEZERO, false);
                 }
             }
         });
@@ -151,12 +142,21 @@ public class AcquisitionPanel extends JPanel implements ICalibrationObserver {
         //x3 coefficient
         calPanel_.add(new JLabel("x^3: "));
         coeff3Field_ = new JTextField(
-                prefs_.get(COEFF3, ""));
+                prefs_.get(PrefStrings.COEFF3, ""));
         setTextAttributes(coeff3Field_, componentSize);
-        coeff3Field_.addActionListener(new ActionListener() {
+        coeff3Field_.addKeyListener(new KeyListener() {
+       
             @Override
-            public void actionPerformed(ActionEvent e) {
-                prefs_.put(COEFF3, coeff3Field_.getText());
+            public void keyTyped(KeyEvent ke) {
+            }
+
+            @Override
+            public void keyPressed(KeyEvent ke) {
+            }
+
+            @Override
+            public void keyReleased(KeyEvent ke) {
+                prefs_.put(PrefStrings.COEFF3, coeff3Field_.getText());
             }
         });
         calPanel_.add(coeff3Field_, "span, center, wrap");
@@ -164,12 +164,21 @@ public class AcquisitionPanel extends JPanel implements ICalibrationObserver {
         //x2 coefficient
         calPanel_.add(new JLabel("x^2: "));
         coeff2Field_ = new JTextField(
-                prefs_.get(COEFF2, ""));
+                prefs_.get(PrefStrings.COEFF2, ""));
         setTextAttributes(coeff2Field_, componentSize);
-        coeff2Field_.addActionListener(new ActionListener() {
+        coeff2Field_.addKeyListener(new KeyListener() {
+       
             @Override
-            public void actionPerformed(ActionEvent e) {
-                prefs_.put(COEFF2, coeff2Field_.getText());
+            public void keyTyped(KeyEvent ke) {
+            }
+
+            @Override
+            public void keyPressed(KeyEvent ke) {
+            }
+
+            @Override
+            public void keyReleased(KeyEvent ke) {
+                prefs_.put(PrefStrings.COEFF2, coeff2Field_.getText());
             }
         });
         calPanel_.add(coeff2Field_, "span, center, wrap");
@@ -177,12 +186,21 @@ public class AcquisitionPanel extends JPanel implements ICalibrationObserver {
         //x coefficient
         calPanel_.add(new JLabel("x: "));
         coeff1Field_ = new JTextField(
-                prefs_.get(COEFF1, ""));
+                prefs_.get(PrefStrings.COEFF1, ""));
         setTextAttributes(coeff1Field_, componentSize);
-        coeff1Field_.addActionListener(new ActionListener() {
+        coeff1Field_.addKeyListener(new KeyListener() {
+       
             @Override
-            public void actionPerformed(ActionEvent e) {
-                prefs_.put(COEFF3, coeff1Field_.getText());
+            public void keyTyped(KeyEvent ke) {
+            }
+
+            @Override
+            public void keyPressed(KeyEvent ke) {
+            }
+
+            @Override
+            public void keyReleased(KeyEvent ke) {
+                prefs_.put(PrefStrings.COEFF1, coeff3Field_.getText());
             }
         });
         calPanel_.add(coeff1Field_, "span, center, wrap");
@@ -190,12 +208,21 @@ public class AcquisitionPanel extends JPanel implements ICalibrationObserver {
         //x0 constant
         calPanel_.add(new JLabel("x^0: "));
         coeff0Field_ = new JTextField(
-                prefs_.get(COEFF0, ""));
+                prefs_.get(PrefStrings.COEFF0, ""));
         setTextAttributes(coeff0Field_, componentSize);
-        coeff0Field_.addActionListener(new ActionListener() {
+        coeff0Field_.addKeyListener(new KeyListener() {
+       
             @Override
-            public void actionPerformed(ActionEvent e) {
-                prefs_.put(COEFF0, coeff0Field_.getText());
+            public void keyTyped(KeyEvent ke) {
+            }
+
+            @Override
+            public void keyPressed(KeyEvent ke) {
+            }
+
+            @Override
+            public void keyReleased(KeyEvent ke) {
+                prefs_.put(PrefStrings.COEFF0, coeff3Field_.getText());
             }
         });
         calPanel_.add(coeff0Field_, "span, center, wrap");
@@ -207,53 +234,53 @@ public class AcquisitionPanel extends JPanel implements ICalibrationObserver {
         final Dimension acqBoxSize = new Dimension(130, 30);
 
         // set directory root file chooser
-        dirRootChooser_ = new JFileChooser(
-                prefs_.get(DIRROOT, ""));
-        dirRootChooser_.setCurrentDirectory(new java.io.File("."));
-        dirRootChooser_.setDialogTitle("Directory Root");
-        dirRootChooser_.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-        dirRootChooser_.addActionListener(new ActionListener() {
+        acqdirRootChooser_ = new JFileChooser(
+                prefs_.get(PrefStrings.ACQDIRROOT, ""));
+        acqdirRootChooser_.setCurrentDirectory(new java.io.File("."));
+        acqdirRootChooser_.setDialogTitle("Directory Root");
+        acqdirRootChooser_.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+        acqdirRootChooser_.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                prefs_.put(DIRROOT, dirRootChooser_.getName());
+                prefs_.put(PrefStrings.ACQDIRROOT, acqdirRootChooser_.getName());
             }
         });
 
         // set directory root text field
         acquirePanel.add(new JLabel("Directory Root:"));
-        dirRootField_ = new JTextField(
-                prefs_.get(DIRROOT, ""));
-        setTextAttributes(dirRootField_, componentSize);
-        dirRootField_.addActionListener(new ActionListener() {
+        acqdirRootField_ = new JTextField(
+                prefs_.get(PrefStrings.ACQDIRROOT, ""));
+        setTextAttributes(acqdirRootField_, componentSize);
+        acqdirRootField_.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                prefs_.put(DIRROOT, dirRootField_.getText());
+                prefs_.put(PrefStrings.ACQDIRROOT, acqdirRootField_.getText());
             }
         });
-        acquirePanel.add(dirRootField_);
+        acquirePanel.add(acqdirRootField_);
 
         //set directory chooser button
-        dirRootButton_ = new JButton("...");
-        dirRootButton_.addActionListener(new ActionListener() {
+        acqdirRootButton_ = new JButton("...");
+        acqdirRootButton_.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 setRootDirectory();
             }
         });
-        acquirePanel.add(dirRootButton_, "wrap");
+        acquirePanel.add(acqdirRootButton_, "wrap");
 
         // set name prefix
         acquirePanel.add(new JLabel("Name Prefix:"));
-        namePrefixField_ = new JTextField(
-                prefs_.get(NAMEPREFIX, ""));
-        setTextAttributes(namePrefixField_, componentSize);
-        namePrefixField_.addActionListener(new ActionListener() {
+        acqnamePrefixField_ = new JTextField(
+                prefs_.get(PrefStrings.ACQNAMEPREFIX, ""));
+        setTextAttributes(acqnamePrefixField_, componentSize);
+        acqnamePrefixField_.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                prefs_.put(NAMEPREFIX, namePrefixField_.getText());
+                prefs_.put(PrefStrings.ACQNAMEPREFIX, acqnamePrefixField_.getText());
             }
         });
-        acquirePanel.add(namePrefixField_, "span, growx, wrap");
+        acquirePanel.add(acqnamePrefixField_, "span, growx, wrap");
 
         // set save images
         saveImagesCheckBox_ = new JCheckBox("Save Images");
@@ -261,9 +288,9 @@ public class AcquisitionPanel extends JPanel implements ICalibrationObserver {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (saveImagesCheckBox_.isSelected()) {
-                    prefs_.putBoolean(SAVEIMAGES, true);
+                    prefs_.putBoolean(PrefStrings.SAVEIMAGES, true);
                 } else {
-                    prefs_.putBoolean(SAVEIMAGES, false);
+                    prefs_.putBoolean(PrefStrings.SAVEIMAGES, false);
                 }
             }
         });
@@ -302,30 +329,12 @@ public class AcquisitionPanel extends JPanel implements ICalibrationObserver {
         jtf.setMinimumSize(size);
     }
 
-    public void calibrationChanged(double x3, double x2, double x1, double x0) {
-        String coeff0 = new DecimalFormat("0.#########").format(x0);
-        prefs_.put(COEFF0, coeff0);
-        coeff0Field_.setText(coeff0);
-
-        String coeff1 = new DecimalFormat("0.#########").format(x1);
-        prefs_.put(COEFF1, coeff1);
-        coeff1Field_.setText(coeff1);
-
-        String coeff2 = new DecimalFormat("0.#########").format(x2);
-        prefs_.put(COEFF2, coeff2);
-        coeff2Field_.setText(coeff2);
-
-        String coeff3 = new DecimalFormat("0.#########").format(x3);
-        prefs_.put(COEFF3, coeff3);
-        coeff3Field_.setText(coeff3);
-    }
-
     protected void setRootDirectory() {
         File result = FileDialogs.openDir(null,
                 "Please choose a directory root for image data",
                 MMStudio.MM_DATA_SET);
         if (result != null) {
-            dirRootField_.setText(result.getAbsolutePath());
+            acqdirRootField_.setText(result.getAbsolutePath());
             //acqEng_.setRootName(result.getAbsolutePath());
         }
     }
@@ -337,9 +346,9 @@ public class AcquisitionPanel extends JPanel implements ICalibrationObserver {
      *
      */
     private void RunAcquisition() {
-        class acqThread extends Thread {
+        class AcqThread extends Thread {
 
-            acqThread(String threadName) {
+            AcqThread(String threadName) {
                 super(threadName);
             }
 
@@ -347,19 +356,19 @@ public class AcquisitionPanel extends JPanel implements ICalibrationObserver {
             public void run() {
 
                 double startAngle = Double.parseDouble(startAngleField_.getText());
-                double angleStepSize = prefs_.getDouble(ANGLESTEPSIZE, 0);
+                double angleStepSize = prefs_.getDouble(PrefStrings.ANGLESTEPSIZE, 0);
                 if (startAngle % angleStepSize == 0) {
                     try {
                         // Set these variables to the correct values and leave
-                        final String deviceName = "TITIRF";
-                        final String propName = "Position";
+                        final String deviceName = prefs_.get(PrefStrings.TIRFDEVICE, "");
+                        final String propName = prefs_.get(PrefStrings.TIRFPROP, "");
 
                         // Usually no need to edit below this line
                         double tempnrAngles = Math.abs(startAngle) * 2 / angleStepSize;
                         int nrAngles = (Integer) Math.round((float) tempnrAngles);
 
                         gui_.closeAllAcquisitions();
-                        final String acq = gui_.getUniqueAcquisitionName(namePrefixField_.getText());
+                        final String acq = gui_.getUniqueAcquisitionName(acqnamePrefixField_.getText());
 
                         int frames = nrAngles + 1;
                         if (doubleZeroCheckBox_.isSelected()) {
@@ -368,12 +377,12 @@ public class AcquisitionPanel extends JPanel implements ICalibrationObserver {
 
                         if (saveImagesCheckBox_.isSelected()) {
                             gui_.openAcquisition(acq,
-                                    dirRootField_.getText(), 1, 1, frames, 1,
+                                    acqdirRootField_.getText(), 1, 1, frames, 1,
                                     true, // Show
                                     true); // Save <--change this to save files in root directory
                         } else {
                             gui_.openAcquisition(acq,
-                                    dirRootField_.getText(), 1, 1, frames, 1,
+                                    acqdirRootField_.getText(), 1, 1, frames, 1,
                                     true, // Show
                                     false); // Save <--change this to save files in root directory
                         }
@@ -446,6 +455,9 @@ public class AcquisitionPanel extends JPanel implements ICalibrationObserver {
                 }
             }
         }
+        AcqThread acqT = new AcqThread("SAIM Acquisition");
+        acqT.start();
+
     }
 
     private int tirfPosFromAngle(double angle) {

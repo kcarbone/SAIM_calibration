@@ -51,7 +51,7 @@ public class SAIMFrame extends MMFrame {
      *
      * @param gui - Reference to MM script interface
     */
-   public SAIMFrame(ScriptInterface gui) {
+   public SAIMFrame(ScriptInterface gui) throws Exception {
       gui_ = gui;
       core_ = gui_.getMMCore();
       loadAndRestorePosition(100, 100, 200, 200);
@@ -65,9 +65,6 @@ public class SAIMFrame extends MMFrame {
       AcquisitionPanel acqPanel = new AcquisitionPanel(gui_, prefs_);
       FlatFieldPanel ffPanel = new FlatFieldPanel(gui_, prefs_);
       CalibrationPanel calPanel = new CalibrationPanel(gui_, prefs_);
-      
-      calPanel.addCalibrationObserver(acqPanel);
-      calPanel.addCalibrationObserver(ffPanel);
       
       tabbedPane_.add(calPanel);
       tabbedPane_.add(ffPanel);
