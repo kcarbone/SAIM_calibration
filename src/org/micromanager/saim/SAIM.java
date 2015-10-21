@@ -19,6 +19,8 @@
 package org.micromanager.saim;
 
 import java.awt.event.WindowEvent;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.micromanager.api.MMPlugin;
 import org.micromanager.api.ScriptInterface;
 
@@ -40,7 +42,11 @@ public class SAIM implements MMPlugin {
          myFrame_ = null;
       }
 
-      myFrame_ = new SAIMFrame(gui_);
+       try {
+           myFrame_ = new SAIMFrame(gui_);
+       } catch (Exception ex) {
+           Logger.getLogger(SAIM.class.getName()).log(Level.SEVERE, null, ex);
+       }
       myFrame_.setVisible(true);
    }
 
@@ -52,7 +58,11 @@ public class SAIM implements MMPlugin {
    @Override
    public void show() {
       if (myFrame_ == null) {
-         myFrame_ = new SAIMFrame(gui_);
+          try {
+              myFrame_ = new SAIMFrame(gui_);
+          } catch (Exception ex) {
+              Logger.getLogger(SAIM.class.getName()).log(Level.SEVERE, null, ex);
+          }
       }
       myFrame_.setVisible(true);
    }

@@ -76,8 +76,7 @@ public class FlatFieldPanel extends JPanel {
     private final JTextField startAngleField_;
     private final JCheckBox doubleZeroCheckBox_;
     private final JPanel calPanel_;
-    private final JCheckBox saveImagesCheckBox_;
-
+    private final JCheckBox ffsaveImagesCheckBox_;
     private final JFileChooser ffdirRootChooser_;
     private final JTextField ffdirRootField_;
     private final JButton ffdirRootButton_;
@@ -105,8 +104,7 @@ public class FlatFieldPanel extends JPanel {
 
         // set angle step size
         setupPanel.add(new JLabel("Angle Step Size (degrees):"));
-        angleStepSizeSpinner_ = new JSpinner(new SpinnerNumberModel(
-                prefs_.getDouble(PrefStrings.ANGLESTEPSIZE, 100), 0, 180, 0.1));
+        angleStepSizeSpinner_ = new JSpinner(new SpinnerNumberModel(1.0, 0, 180, 0.1));
         angleStepSizeSpinner_.addChangeListener(new ChangeListener() {
             @Override
             public void stateChanged(ChangeEvent e) {
@@ -117,8 +115,7 @@ public class FlatFieldPanel extends JPanel {
 
         // set start angle
         setupPanel.add(new JLabel("Start Angle:"));
-        startAngleField_ = new JTextField(
-                prefs_.get(PrefStrings.STARTANGLE, "0"));
+        startAngleField_ = new JTextField("");
         setTextAttributes(startAngleField_, componentSize);
         startAngleField_.addActionListener(new ActionListener() {
             @Override
@@ -131,7 +128,6 @@ public class FlatFieldPanel extends JPanel {
 
         // set double zero position
         doubleZeroCheckBox_ = new JCheckBox("Double Zero Position");
-        doubleZeroCheckBox_.setSelected(true);
         doubleZeroCheckBox_.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -153,11 +149,10 @@ public class FlatFieldPanel extends JPanel {
         //Set calibration values
         //x3 coefficient
         calPanel_.add(new JLabel("x^3: "));
-        coeff3Field_ = new JTextField(
-                prefs_.get(PrefStrings.COEFF3, ""));
+        coeff3Field_ = new JTextField("");
         setTextAttributes(coeff3Field_, componentSize);
         coeff3Field_.addKeyListener(new KeyListener() {
-       
+
             @Override
             public void keyTyped(KeyEvent ke) {
             }
@@ -175,8 +170,7 @@ public class FlatFieldPanel extends JPanel {
 
         //x2 coefficient
         calPanel_.add(new JLabel("x^2: "));
-        coeff2Field_ = new JTextField(
-                prefs_.get(PrefStrings.COEFF2, ""));
+        coeff2Field_ = new JTextField("");
         setTextAttributes(coeff2Field_, componentSize);
         coeff2Field_.addKeyListener(new KeyListener() {
 
@@ -197,8 +191,7 @@ public class FlatFieldPanel extends JPanel {
 
         //x coefficient
         calPanel_.add(new JLabel("x: "));
-        coeff1Field_ = new JTextField(
-                prefs_.get(PrefStrings.COEFF1, ""));
+        coeff1Field_ = new JTextField("");
         setTextAttributes(coeff1Field_, componentSize);
         coeff1Field_.addKeyListener(new KeyListener() {
 
@@ -219,8 +212,7 @@ public class FlatFieldPanel extends JPanel {
 
         //x0 constant
         calPanel_.add(new JLabel("x^0: "));
-        coeff0Field_ = new JTextField(
-                prefs_.get(PrefStrings.COEFF0, ""));
+        coeff0Field_ = new JTextField("");
         setTextAttributes(coeff0Field_, componentSize);
         coeff0Field_.addKeyListener(new KeyListener() {
 
@@ -246,8 +238,7 @@ public class FlatFieldPanel extends JPanel {
         final Dimension acqBoxSize = new Dimension(130, 30);
 
         // set directory root file chooser
-        ffdirRootChooser_ = new JFileChooser(
-                prefs_.get(PrefStrings.FFDIRROOT, ""));
+        ffdirRootChooser_ = new JFileChooser("");
         ffdirRootChooser_.setCurrentDirectory(new java.io.File("."));
         ffdirRootChooser_.setDialogTitle("Directory Root");
         ffdirRootChooser_.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
@@ -263,8 +254,7 @@ public class FlatFieldPanel extends JPanel {
         flatfieldPanel.add(new JLabel("SAIM acquisitions at different positions for correction"), "span, wrap");
         flatfieldPanel.add(new JLabel("of final images."), "span, wrap");
         flatfieldPanel.add(new JLabel("Directory Root:"));
-        ffdirRootField_ = new JTextField(
-                prefs_.get(PrefStrings.FFDIRROOT, ""));
+        ffdirRootField_ = new JTextField("");
         setTextAttributes(ffdirRootField_, componentSize);
         ffdirRootField_.addActionListener(new ActionListener() {
             @Override
@@ -286,8 +276,7 @@ public class FlatFieldPanel extends JPanel {
 
         // set name prefix
         flatfieldPanel.add(new JLabel("Name Prefix:"));
-        ffnamePrefixField_ = new JTextField(
-                prefs_.get(PrefStrings.FFNAMEPREFIX, ""));
+        ffnamePrefixField_ = new JTextField("");
         setTextAttributes(ffnamePrefixField_, componentSize);
         ffnamePrefixField_.addActionListener(new ActionListener() {
             @Override
@@ -298,18 +287,18 @@ public class FlatFieldPanel extends JPanel {
         flatfieldPanel.add(ffnamePrefixField_, "span, growx, wrap");
 
         // set save images
-        saveImagesCheckBox_ = new JCheckBox("Save Images");
-        saveImagesCheckBox_.addActionListener(new ActionListener() {
+        ffsaveImagesCheckBox_ = new JCheckBox("Save Images");
+        ffsaveImagesCheckBox_.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if (saveImagesCheckBox_.isSelected()) {
-                    prefs_.putBoolean(PrefStrings.SAVEIMAGES, true);
+                if (ffsaveImagesCheckBox_.isSelected()) {
+                    prefs_.putBoolean(PrefStrings.FFSAVEIMAGES, true);
                 } else {
-                    prefs_.putBoolean(PrefStrings.SAVEIMAGES, false);
+                    prefs_.putBoolean(PrefStrings.FFSAVEIMAGES, false);
                 }
             }
         });
-        flatfieldPanel.add(saveImagesCheckBox_, "span 2, growx, wrap");
+        flatfieldPanel.add(ffsaveImagesCheckBox_, "span 2, growx, wrap");
 
         // set run button
         runButton_ = new JToggleButton("Run FlatField");
@@ -331,6 +320,7 @@ public class FlatFieldPanel extends JPanel {
         add(setupPanel, "span, growx, wrap");
         add(calPanel_, "span, growx, wrap");
         add(flatfieldPanel, "span, growx, wrap");
+        UpdatePrefs();
     }
 
     /**
@@ -353,8 +343,6 @@ public class FlatFieldPanel extends JPanel {
             //acqEng_.setRootName(result.getAbsolutePath());
         }
     }
-
-    
 
     /**
      * User is supposed to set up the acquisition in the micromanager panel.
@@ -384,7 +372,7 @@ public class FlatFieldPanel extends JPanel {
                     frames = nrAngles + 2;
                 }
 
-                if (saveImagesCheckBox_.isSelected()) {
+                if (ffsaveImagesCheckBox_.isSelected()) {
                     gui_.openAcquisition(acq,
                             ffdirRootField_.getText(), 1, 1, frames, 1,
                             true, // Show
@@ -547,5 +535,20 @@ public class FlatFieldPanel extends JPanel {
         AcqThread acqT = new AcqThread("SAIM Acquisition");
         acqT.start();
 
+    }
+
+    //function to add preferences values to each field that uses them
+
+    private void UpdatePrefs() {
+        angleStepSizeSpinner_.setValue(Double.parseDouble(prefs_.get(PrefStrings.ANGLESTEPSIZE, "")));
+        startAngleField_.setText(prefs_.get(PrefStrings.STARTANGLE, ""));
+        doubleZeroCheckBox_.setSelected(Boolean.parseBoolean(prefs_.get(PrefStrings.DOUBLEZERO, "")));
+        ffsaveImagesCheckBox_.setSelected(Boolean.parseBoolean(prefs_.get(PrefStrings.FFSAVEIMAGES, "")));
+        ffdirRootField_.setText(prefs_.get(PrefStrings.FFDIRROOT, ""));
+        ffnamePrefixField_.setText(prefs_.get(PrefStrings.FFNAMEPREFIX, ""));
+        coeff3Field_.setText(prefs_.get(PrefStrings.COEFF3, ""));
+        coeff2Field_.setText(prefs_.get(PrefStrings.COEFF2, ""));
+        coeff1Field_.setText(prefs_.get(PrefStrings.COEFF1, ""));
+        coeff0Field_.setText(prefs_.get(PrefStrings.COEFF0, ""));
     }
 }

@@ -24,8 +24,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.geom.Point2D;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
@@ -60,7 +58,7 @@ public class CalibrationPanel extends JPanel {
     private final Preferences prefs_;
     private final CMMCore core_;
 
-    private final JTextField motorPosField_;
+    private final JTextField zeroMotorPosField_;
     private final JComboBox serialPortBox_;
     private final JComboBox tirfDeviceBox_;
     private final JComboBox tirfPropBox_;
@@ -154,19 +152,17 @@ public class CalibrationPanel extends JPanel {
         });
         setupPanel.add(tirfPropBox_, "wrap");
 
-        // set motor position
+        // set zero motor position for calculating offset
         setupPanel.add(new JLabel("Set 0 Deg. Motor Position:"));
-        motorPosField_ = new JTextField(
-                Integer.toString(prefs_.getInt(PrefStrings.MOTORPOS, 31640)));
-        setTextAttributes(motorPosField_, componentSize);
-        motorPosField_.addActionListener(new ActionListener() {
+        zeroMotorPosField_ = new JTextField("0");
+        setTextAttributes(zeroMotorPosField_, componentSize);
+        zeroMotorPosField_.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                prefs_.putDouble(PrefStrings.MOTORPOS, Integer.parseInt(
-                        motorPosField_.getText()));
+                prefs_.put(PrefStrings.ZEROMOTORPOS, zeroMotorPosField_.getText());
             }
         });
-        setupPanel.add(motorPosField_, "span, growx, wrap");
+        setupPanel.add(zeroMotorPosField_, "span, growx, wrap");
 
         // calculate offset button
         JButton calcOffsetButton = new JButton("Calculate Offset");
@@ -190,62 +186,53 @@ public class CalibrationPanel extends JPanel {
 
         // sampleRI
         calibratePanel.add(new JLabel("Refractive Index of Sample:"));
-        sampleRIField_ = new JTextField(
-                ((Double) (prefs_.getDouble(PrefStrings.SAMPLERI, 1.33))).toString());
+        sampleRIField_ = new JTextField("0");
         setTextAttributes(sampleRIField_, calBoxSize);
         sampleRIField_.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                prefs_.putDouble(PrefStrings.SAMPLERI, Double.parseDouble(
-                        sampleRIField_.getText()));
+                prefs_.put(PrefStrings.SAMPLERI, sampleRIField_.getText());
             }
         });
         calibratePanel.add(sampleRIField_, "span, growx, wrap");
 
         // immersion RI
         calibratePanel.add(new JLabel("Refractive Index of Immersion Medium:"));
-        immersionRIField_ = new JTextField(
-                ((Double) (prefs_.getDouble(PrefStrings.IMMERSIONRI, 1.33))).toString());
+        immersionRIField_ = new JTextField("0");
         setTextAttributes(immersionRIField_, calBoxSize);
         immersionRIField_.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                prefs_.putDouble(PrefStrings.IMMERSIONRI, Double.parseDouble(
-                        immersionRIField_.getText()));
+                prefs_.put(PrefStrings.IMMERSIONRI, immersionRIField_.getText());
             }
         });
         calibratePanel.add(immersionRIField_, "span, growx, wrap");
 
         // start motor position
         calibratePanel.add(new JLabel("Start Motor Position:"));
-        startMotorPosField_ = new JTextField(
-                ((Integer) (prefs_.getInt(PrefStrings.STARTMOTORPOS, 13000))).toString());
+        startMotorPosField_ = new JTextField("0");
         setTextAttributes(startMotorPosField_, calBoxSize);
         startMotorPosField_.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                prefs_.putInt(PrefStrings.STARTMOTORPOS, Integer.parseInt(
-                        startMotorPosField_.getText()));
+                prefs_.put(PrefStrings.STARTMOTORPOS, startMotorPosField_.getText());
             }
         });
         calibratePanel.add(startMotorPosField_, "span, growx, wrap");
 
         calibratePanel.add(new JLabel("End Motor Position:"));
-        endMotorPosField_ = new JTextField(
-                ((Integer) (prefs_.getInt(PrefStrings.ENDMOTORPOS, 50000))).toString());
+        endMotorPosField_ = new JTextField("0");
         setTextAttributes(endMotorPosField_, calBoxSize);
         endMotorPosField_.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                prefs_.putInt(PrefStrings.ENDMOTORPOS, Integer.parseInt(
-                        endMotorPosField_.getText()));
+                prefs_.put(PrefStrings.ENDMOTORPOS, endMotorPosField_.getText());
             }
         });
         calibratePanel.add(endMotorPosField_, "span, growx, wrap");
 
         calibratePanel.add(new JLabel("Number of Calibration Steps"));
-        numberOfCalibrationStepsSpinner_ = new JSpinner(new SpinnerNumberModel(
-                prefs_.getInt(PrefStrings.NUMCALSTEPS, 100), 0, 400, 1));
+        numberOfCalibrationStepsSpinner_ = new JSpinner(new SpinnerNumberModel(100, 0, 400, 1));
         numberOfCalibrationStepsSpinner_.addChangeListener(new ChangeListener() {
             @Override
             public void stateChanged(ChangeEvent e) {
@@ -275,7 +262,9 @@ public class CalibrationPanel extends JPanel {
         // Combine them all
         add(setupPanel, "span, growx, wrap");
         add(calibratePanel, "span, growx, wrap");
+        UpdatePrefs();
     }
+    
 
     /**
      * Utility function to set attributes for JTextFields in the dialog
@@ -295,7 +284,7 @@ public class CalibrationPanel extends JPanel {
      *
      */
     private void RunOffsetCalc() {
-        final int zeroPos = Integer.parseInt(motorPosField_.getText());
+        final double zeroPos = Double.parseDouble(PrefStrings.ZEROMOTORPOS);
         try {
             core_.setShutterOpen(true);
             Point2D.Double offsetVal = takeSnapshot(zeroPos, "Offset Scan");
@@ -319,7 +308,7 @@ public class CalibrationPanel extends JPanel {
      * @param plotTitle String used as title in the plot of the CCD readout
      * @return Point2D.double. x = bottom CCD, y = top CCD
      */
-    private Point2D.Double takeSnapshot(int pos, String plotTitle) {
+    private Point2D.Double takeSnapshot(double pos, String plotTitle) {
         int i = 0;
         try {
             //Set up communication with devices
@@ -398,17 +387,17 @@ public class CalibrationPanel extends JPanel {
             @Override
             public void run() {
                 // Editable variables for calibration
-                final int startPosition = Integer.parseInt(startMotorPosField_.getText());
-                final int endPosition = Integer.parseInt(endMotorPosField_.getText());
-                final int nrAngles = (Integer) numberOfCalibrationStepsSpinner_.getValue();
-                final int angleStepSize = (endPosition - startPosition) / nrAngles;
+                final double startPosition = Double.parseDouble(PrefStrings.STARTMOTORPOS);
+                final double endPosition = Double.parseDouble(PrefStrings.ENDMOTORPOS);
+                final int nrAngles = prefs_.getInt(PrefStrings.NUMCALSTEPS, 0);
+                final double angleStepSize = (endPosition - startPosition) / nrAngles;
                 int i = 0;
                 try {
                     //Take image of laser position
                     XYSeries dect1gaussianMeans = new XYSeries(new Double(nrAngles), false, true);
                     XYSeries dect2gaussianMeans = new XYSeries(new Double(nrAngles), false, true);
                     core_.setShutterOpen(true);
-                    int pos = startPosition;
+                    double pos = startPosition;
                     for (int angle = 0; angle <= nrAngles; angle++) {
                         //Check state of user Abort button 
                         if (runButton_.isSelected()) {
@@ -443,8 +432,8 @@ public class CalibrationPanel extends JPanel {
                         //Snells law correction angle of laser light for refractive index 
                         //Refractive indeces: acrylic = 1.49, water = 1.33, user input = RI
                         //determine true angle coming out of objective (correct for acrylic)
-                        double immersionRI = Double.parseDouble(sampleRIField_.getText());
-                        double sampleRI = Double.parseDouble(immersionRIField_.getText());
+                        double immersionRI = Double.parseDouble(PrefStrings.IMMERSIONRI);
+                        double sampleRI = Double.parseDouble(PrefStrings.SAMPLERI);
                         Double firstCorrect = snellIt(observedAngle, 1.49, immersionRI);
                         //determine true angle hitting the sample (correct for water/buffer)
                         Double trueAngle = snellIt(firstCorrect, immersionRI, sampleRI);
@@ -491,5 +480,18 @@ public class CalibrationPanel extends JPanel {
     private static double snellIt(double startAngle, double startRI, double endRI) {
         Double trueAngle = Math.toDegrees(Math.asin((startRI / endRI) * Math.sin(Math.toRadians(startAngle))));
         return trueAngle;
+    }    
+
+//function to update panel with stored preferences values
+    private void UpdatePrefs() {
+        zeroMotorPosField_.setText(prefs_.get(PrefStrings.ZEROMOTORPOS, ""));
+        serialPortBox_.setSelectedItem(prefs_.get(PrefStrings.SERIALPORT, ""));
+        tirfDeviceBox_.setSelectedItem(prefs_.get(PrefStrings.TIRFDEVICE, ""));
+        tirfPropBox_.setSelectedItem(prefs_.get(PrefStrings.TIRFPROP, ""));
+        sampleRIField_.setText(prefs_.get(PrefStrings.SAMPLERI, ""));
+        immersionRIField_.setText(prefs_.get(PrefStrings.IMMERSIONRI, ""));
+        startMotorPosField_.setText(prefs_.get(PrefStrings.STARTMOTORPOS, ""));
+        endMotorPosField_.setText(prefs_.get(PrefStrings.ENDMOTORPOS, ""));
+        numberOfCalibrationStepsSpinner_.setValue(Integer.parseInt(prefs_.get(PrefStrings.NUMCALSTEPS, "")));
     }
 }

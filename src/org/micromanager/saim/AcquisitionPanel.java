@@ -26,10 +26,6 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.io.File;
 import java.util.prefs.Preferences;
-import java.lang.Math;
-import java.text.DecimalFormat;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JFileChooser;
@@ -48,7 +44,6 @@ import org.micromanager.api.ScriptInterface;
 import org.micromanager.saim.gui.GuiUtils;
 import org.micromanager.utils.FileDialogs;
 import org.micromanager.MMStudio;
-import org.micromanager.utils.MMScriptException;
 
 /**
  *
@@ -94,7 +89,7 @@ public class AcquisitionPanel extends JPanel {
       // set angle step size
       setupPanel.add(new JLabel("Angle Step Size (degrees):"));
       angleStepSizeSpinner_ = new JSpinner(new SpinnerNumberModel(
-              prefs_.getDouble(PrefStrings.ANGLESTEPSIZE, 100), 0, 180, 0.1));
+              1.0, 0, 180, 0.1));
       angleStepSizeSpinner_.addChangeListener(new ChangeListener() {
          @Override
          public void stateChanged(ChangeEvent e) {
@@ -105,8 +100,7 @@ public class AcquisitionPanel extends JPanel {
 
       // set start angle
       setupPanel.add(new JLabel("Start Angle:"));
-      startAngleField_ = new JTextField(
-              prefs_.get(PrefStrings.STARTANGLE, "0"));
+      startAngleField_ = new JTextField("");
       setTextAttributes(startAngleField_, componentSize);
       startAngleField_.addActionListener(new ActionListener() {
          @Override
@@ -119,7 +113,6 @@ public class AcquisitionPanel extends JPanel {
 
       // set double zero position
       doubleZeroCheckBox_ = new JCheckBox("Double Zero Position");
-      doubleZeroCheckBox_.setSelected(true);
       doubleZeroCheckBox_.addActionListener(new ActionListener() {
          @Override
          public void actionPerformed(ActionEvent e) {
@@ -141,8 +134,7 @@ public class AcquisitionPanel extends JPanel {
       //Set calibration values
       //x3 coefficient
       calPanel_.add(new JLabel("x^3: "));
-      coeff3Field_ = new JTextField(
-              prefs_.get(PrefStrings.COEFF3, ""));
+      coeff3Field_ = new JTextField("");
       setTextAttributes(coeff3Field_, componentSize);
       coeff3Field_.addKeyListener(new KeyListener() {
 
@@ -163,8 +155,7 @@ public class AcquisitionPanel extends JPanel {
 
       //x2 coefficient
       calPanel_.add(new JLabel("x^2: "));
-      coeff2Field_ = new JTextField(
-              prefs_.get(PrefStrings.COEFF2, ""));
+      coeff2Field_ = new JTextField("");
       setTextAttributes(coeff2Field_, componentSize);
       coeff2Field_.addKeyListener(new KeyListener() {
 
@@ -185,8 +176,7 @@ public class AcquisitionPanel extends JPanel {
 
       //x coefficient
       calPanel_.add(new JLabel("x: "));
-      coeff1Field_ = new JTextField(
-              prefs_.get(PrefStrings.COEFF1, ""));
+      coeff1Field_ = new JTextField("");
       setTextAttributes(coeff1Field_, componentSize);
       coeff1Field_.addKeyListener(new KeyListener() {
 
@@ -200,15 +190,14 @@ public class AcquisitionPanel extends JPanel {
 
          @Override
          public void keyReleased(KeyEvent ke) {
-            prefs_.put(PrefStrings.COEFF1, coeff3Field_.getText());
+            prefs_.put(PrefStrings.COEFF1, coeff1Field_.getText());
          }
       });
       calPanel_.add(coeff1Field_, "span, center, wrap");
 
       //x0 constant
       calPanel_.add(new JLabel("x^0: "));
-      coeff0Field_ = new JTextField(
-              prefs_.get(PrefStrings.COEFF0, ""));
+      coeff0Field_ = new JTextField("");
       setTextAttributes(coeff0Field_, componentSize);
       coeff0Field_.addKeyListener(new KeyListener() {
 
@@ -234,8 +223,7 @@ public class AcquisitionPanel extends JPanel {
       final Dimension acqBoxSize = new Dimension(130, 30);
 
       // set directory root file chooser
-      acqdirRootChooser_ = new JFileChooser(
-              prefs_.get(PrefStrings.ACQDIRROOT, ""));
+      acqdirRootChooser_ = new JFileChooser("");
       acqdirRootChooser_.setCurrentDirectory(new java.io.File("."));
       acqdirRootChooser_.setDialogTitle("Directory Root");
       acqdirRootChooser_.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
@@ -248,8 +236,7 @@ public class AcquisitionPanel extends JPanel {
 
       // set directory root text field
       acquirePanel.add(new JLabel("Directory Root:"));
-      acqdirRootField_ = new JTextField(
-              prefs_.get(PrefStrings.ACQDIRROOT, ""));
+      acqdirRootField_ = new JTextField("");
       setTextAttributes(acqdirRootField_, componentSize);
       acqdirRootField_.addActionListener(new ActionListener() {
          @Override
@@ -271,8 +258,7 @@ public class AcquisitionPanel extends JPanel {
 
       // set name prefix
       acquirePanel.add(new JLabel("Name Prefix:"));
-      acqnamePrefixField_ = new JTextField(
-              prefs_.get(PrefStrings.ACQNAMEPREFIX, ""));
+      acqnamePrefixField_ = new JTextField("");
       setTextAttributes(acqnamePrefixField_, componentSize);
       acqnamePrefixField_.addActionListener(new ActionListener() {
          @Override
@@ -288,9 +274,9 @@ public class AcquisitionPanel extends JPanel {
          @Override
          public void actionPerformed(ActionEvent e) {
             if (saveImagesCheckBox_.isSelected()) {
-               prefs_.putBoolean(PrefStrings.SAVEIMAGES, true);
+               prefs_.putBoolean(PrefStrings.ACQSAVEIMAGES, true);
             } else {
-               prefs_.putBoolean(PrefStrings.SAVEIMAGES, false);
+               prefs_.putBoolean(PrefStrings.ACQSAVEIMAGES, false);
             }
          }
       });
@@ -316,6 +302,7 @@ public class AcquisitionPanel extends JPanel {
       add(setupPanel, "span, growx, wrap");
       add(calPanel_, "span, growx, wrap");
       add(acquirePanel, "span, growx, wrap");
+      UpdatePrefs();
    }
 
    /**
@@ -461,5 +448,19 @@ public class AcquisitionPanel extends JPanel {
       int pos = Math.round((float) tempPos);
       return pos;
    }
+   
+   //function to add preferences values to each field that uses them
+   private void UpdatePrefs() {
+        angleStepSizeSpinner_.setValue(Double.parseDouble(prefs_.get(PrefStrings.ANGLESTEPSIZE, "")));
+        startAngleField_.setText(prefs_.get(PrefStrings.STARTANGLE, ""));
+        doubleZeroCheckBox_.setSelected(Boolean.parseBoolean(prefs_.get(PrefStrings.DOUBLEZERO, "")));
+        saveImagesCheckBox_.setSelected(Boolean.parseBoolean(prefs_.get(PrefStrings.ACQSAVEIMAGES, "")));
+        acqdirRootField_.setText(prefs_.get(PrefStrings.ACQDIRROOT, ""));
+        acqnamePrefixField_.setText(prefs_.get(PrefStrings.ACQNAMEPREFIX, ""));
+        coeff3Field_.setText(prefs_.get(PrefStrings.COEFF3, ""));
+        coeff2Field_.setText(prefs_.get(PrefStrings.COEFF2, ""));
+        coeff1Field_.setText(prefs_.get(PrefStrings.COEFF1, ""));
+        coeff0Field_.setText(prefs_.get(PrefStrings.COEFF0, ""));
+    }
 
 }
