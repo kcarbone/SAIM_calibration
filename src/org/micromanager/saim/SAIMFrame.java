@@ -31,6 +31,8 @@ import mmcorej.CMMCore;
 import java.util.prefs.Preferences;
 import org.micromanager.api.ScriptInterface;
 import javax.swing.JTabbedPane;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import net.miginfocom.swing.MigLayout;
 import org.micromanager.utils.MMFrame;
 
@@ -50,6 +52,7 @@ public class SAIMFrame extends MMFrame {
      * Constructor
      *
      * @param gui - Reference to MM script interface
+    * @throws java.lang.Exception
     */
    public SAIMFrame(ScriptInterface gui) throws Exception {
       gui_ = gui;
@@ -62,13 +65,30 @@ public class SAIMFrame extends MMFrame {
 
       tabbedPane_ = new JTabbedPane();
 
-      AcquisitionPanel acqPanel = new AcquisitionPanel(gui_, prefs_);
-      FlatFieldPanel ffPanel = new FlatFieldPanel(gui_, prefs_);
-      CalibrationPanel calPanel = new CalibrationPanel(gui_, prefs_);
+      final AcquisitionPanel acqPanel = new AcquisitionPanel(gui_, prefs_);
+      final FlatFieldPanel ffPanel = new FlatFieldPanel(gui_, prefs_);
+      final CalibrationPanel calPanel = new CalibrationPanel(gui_, prefs_);
       
       tabbedPane_.add(calPanel);
       tabbedPane_.add(ffPanel);
       tabbedPane_.add(acqPanel);
+
+      tabbedPane_.addChangeListener(new ChangeListener() {
+
+         @Override
+         public void stateChanged(ChangeEvent e) {
+            // not very elegant.  Would be nice to make an interface for the Panels...
+            if (tabbedPane_.getSelectedIndex() == 0) {
+               calPanel.UpdateGUIFromPrefs();
+            }
+            if (tabbedPane_.getSelectedIndex() == 1) {
+               ffPanel.UpdateGUIFromPrefs();
+            }
+            if (tabbedPane_.getSelectedIndex() == 2) {
+              acqPanel.UpdateGUIFromPrefs();
+            }
+         }
+      });
 
       this.add(tabbedPane_);
       this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);

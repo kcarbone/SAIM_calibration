@@ -23,7 +23,8 @@ public class PrefStrings {
     public final static String ANGLESTEPSIZE = "anglestepsize";
     public final static String STARTANGLE = "startangle";
     public final static String DOUBLEZERO = "doublezero";
-    public final static String FFSAVEIMAGES = "ffsaveimages";
+    public final static String FFSHOWIMAGES = "ffsaveimages";
+    public final static String FFBACKGROUNDFILE = "ffBackgroundFile";
     public final static String FFDIRROOT = "ffdirroot";
     public final static String FFNAMEPREFIX = "ffnameprefix";
     public final static String ACQSAVEIMAGES = "acqsaveimages";

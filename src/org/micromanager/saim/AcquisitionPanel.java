@@ -20,6 +20,7 @@
 package org.micromanager.saim;
 
 import java.awt.Dimension;
+import java.awt.dnd.DropTarget;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -44,6 +45,7 @@ import org.micromanager.api.ScriptInterface;
 import org.micromanager.saim.gui.GuiUtils;
 import org.micromanager.utils.FileDialogs;
 import org.micromanager.MMStudio;
+import org.micromanager.saim.gui.DragFileToTextField;
 
 /**
  *
@@ -66,10 +68,10 @@ public class AcquisitionPanel extends JPanel {
    private final JButton acqdirRootButton_;
    private final JTextField acqnamePrefixField_;
    private final JToggleButton runButton_;
-   private JTextField coeff3Field_;
-   private JTextField coeff2Field_;
-   private JTextField coeff1Field_;
-   private JTextField coeff0Field_;
+   private final JTextField coeff3Field_;
+   private final JTextField coeff2Field_;
+   private final JTextField coeff1Field_;
+   private final JTextField coeff0Field_;
 
    public AcquisitionPanel(ScriptInterface gui, Preferences prefs) {
       super(new MigLayout(
@@ -133,7 +135,7 @@ public class AcquisitionPanel extends JPanel {
 
       //Set calibration values
       //x3 coefficient
-      calPanel_.add(new JLabel("x^3: "));
+      calPanel_.add(new JLabel("<html>x<sup>3</sup>: </html>"));
       coeff3Field_ = new JTextField("");
       setTextAttributes(coeff3Field_, componentSize);
       coeff3Field_.addKeyListener(new KeyListener() {
@@ -154,7 +156,7 @@ public class AcquisitionPanel extends JPanel {
       calPanel_.add(coeff3Field_, "span, center, wrap");
 
       //x2 coefficient
-      calPanel_.add(new JLabel("x^2: "));
+      calPanel_.add(new JLabel("<html>x<sup>2</sup>: </html>"));
       coeff2Field_ = new JTextField("");
       setTextAttributes(coeff2Field_, componentSize);
       coeff2Field_.addKeyListener(new KeyListener() {
@@ -196,7 +198,7 @@ public class AcquisitionPanel extends JPanel {
       calPanel_.add(coeff1Field_, "span, center, wrap");
 
       //x0 constant
-      calPanel_.add(new JLabel("x^0: "));
+      calPanel_.add(new JLabel("<html>x<sup>0</sup>: </html>"));
       coeff0Field_ = new JTextField("");
       setTextAttributes(coeff0Field_, componentSize);
       coeff0Field_.addKeyListener(new KeyListener() {
@@ -244,6 +246,8 @@ public class AcquisitionPanel extends JPanel {
             prefs_.put(PrefStrings.ACQDIRROOT, acqdirRootField_.getText());
          }
       });
+      DropTarget dt = new DropTarget(acqdirRootField_,
+              new DragFileToTextField(acqdirRootField_, true));
       acquirePanel.add(acqdirRootField_);
 
       //set directory chooser button
@@ -302,7 +306,8 @@ public class AcquisitionPanel extends JPanel {
       add(setupPanel, "span, growx, wrap");
       add(calPanel_, "span, growx, wrap");
       add(acquirePanel, "span, growx, wrap");
-      UpdatePrefs();
+      UpdateGUIFromPrefs();
+
    }
 
    /**
@@ -343,7 +348,7 @@ public class AcquisitionPanel extends JPanel {
 
             double startAngle = Double.parseDouble(startAngleField_.getText());
             double angleStepSize = prefs_.getDouble(PrefStrings.ANGLESTEPSIZE, 0);
-            String acq = "";
+            String acq;
             if (startAngle % angleStepSize == 0) {
                try {
                   // Set these variables to the correct values and leave
@@ -450,8 +455,8 @@ public class AcquisitionPanel extends JPanel {
    }
    
    //function to add preferences values to each field that uses them
-   private void UpdatePrefs() {
-        angleStepSizeSpinner_.setValue(Double.parseDouble(prefs_.get(PrefStrings.ANGLESTEPSIZE, "")));
+   public final void UpdateGUIFromPrefs() {
+        angleStepSizeSpinner_.setValue(Double.parseDouble(prefs_.get(PrefStrings.ANGLESTEPSIZE, "0.0")));
         startAngleField_.setText(prefs_.get(PrefStrings.STARTANGLE, ""));
         doubleZeroCheckBox_.setSelected(Boolean.parseBoolean(prefs_.get(PrefStrings.DOUBLEZERO, "")));
         saveImagesCheckBox_.setSelected(Boolean.parseBoolean(prefs_.get(PrefStrings.ACQSAVEIMAGES, "")));

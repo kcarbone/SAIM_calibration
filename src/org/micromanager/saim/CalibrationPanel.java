@@ -38,6 +38,9 @@ import javax.swing.JToggleButton;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.text.JTextComponent;
 import mmcorej.CMMCore;
 import mmcorej.DeviceType;
 import mmcorej.StrVector;
@@ -119,23 +122,6 @@ public class CalibrationPanel extends JPanel {
             tirfDeviceBox_.addItem(stagePorts.get(i));
         }
         tirfDeviceBox_.setSelectedItem(prefs_.get(PrefStrings.TIRFDEVICE, ""));
-        tirfDeviceBox_.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent evt) {
-                prefs_.put(PrefStrings.TIRFDEVICE, (String) tirfDeviceBox_.getSelectedItem());
-                try {
-                    StrVector deviceProps = core_.getDevicePropertyNames(prefs_.get(PrefStrings.TIRFDEVICE, ""));
-                    DefaultComboBoxModel model = (DefaultComboBoxModel) tirfPropBox_.getModel();
-                    model.removeAllElements();
-                    for (int i = 0; i < deviceProps.size(); i++) {
-                        model.addElement(deviceProps.get(i));
-                    }
-                } catch (Exception ex) {
-                    Logger.getLogger(CalibrationPanel.class.getName()).log(Level.SEVERE, null, ex);
-                }
-
-            }
-        });
         setupPanel.add(tirfDeviceBox_, "wrap");
 
         //Add TIRF motor position property name
@@ -143,25 +129,20 @@ public class CalibrationPanel extends JPanel {
         tirfPropBox_ = new JComboBox();
         tirfPropBox_.setMaximumSize(componentSize);
         tirfPropBox_.setMinimumSize(componentSize);
-        tirfPropBox_.setSelectedItem(prefs_.get(PrefStrings.TIRFPROP, ""));
-        tirfPropBox_.addActionListener(new ActionListener() {
+        setupPanel.add(tirfPropBox_, "wrap");
+        
+        tirfDeviceBox_.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent evt) {
-                prefs_.put(PrefStrings.TIRFPROP, (String) tirfPropBox_.getSelectedItem());
+               updateDeviceGUI();
             }
         });
-        setupPanel.add(tirfPropBox_, "wrap");
 
         // set zero motor position for calculating offset
         setupPanel.add(new JLabel("Set 0 Deg. Motor Position:"));
         zeroMotorPosField_ = new JTextField("0");
         setTextAttributes(zeroMotorPosField_, componentSize);
-        zeroMotorPosField_.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                prefs_.put(PrefStrings.ZEROMOTORPOS, zeroMotorPosField_.getText());
-            }
-        });
+        tieTextFieldToPrefs(zeroMotorPosField_, PrefStrings.ZEROMOTORPOS);
         setupPanel.add(zeroMotorPosField_, "span, growx, wrap");
 
         // calculate offset button
@@ -188,47 +169,27 @@ public class CalibrationPanel extends JPanel {
         calibratePanel.add(new JLabel("Refractive Index of Sample:"));
         sampleRIField_ = new JTextField("0");
         setTextAttributes(sampleRIField_, calBoxSize);
-        sampleRIField_.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                prefs_.put(PrefStrings.SAMPLERI, sampleRIField_.getText());
-            }
-        });
+        tieTextFieldToPrefs(sampleRIField_, PrefStrings.SAMPLERI);
         calibratePanel.add(sampleRIField_, "span, growx, wrap");
 
         // immersion RI
         calibratePanel.add(new JLabel("Refractive Index of Immersion Medium:"));
         immersionRIField_ = new JTextField("0");
-        setTextAttributes(immersionRIField_, calBoxSize);
-        immersionRIField_.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                prefs_.put(PrefStrings.IMMERSIONRI, immersionRIField_.getText());
-            }
-        });
+        setTextAttributes(immersionRIField_, calBoxSize);        
+        tieTextFieldToPrefs(immersionRIField_, PrefStrings.IMMERSIONRI);
         calibratePanel.add(immersionRIField_, "span, growx, wrap");
 
         // start motor position
         calibratePanel.add(new JLabel("Start Motor Position:"));
         startMotorPosField_ = new JTextField("0");
         setTextAttributes(startMotorPosField_, calBoxSize);
-        startMotorPosField_.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                prefs_.put(PrefStrings.STARTMOTORPOS, startMotorPosField_.getText());
-            }
-        });
+        tieTextFieldToPrefs(startMotorPosField_, PrefStrings.STARTMOTORPOS);
         calibratePanel.add(startMotorPosField_, "span, growx, wrap");
 
         calibratePanel.add(new JLabel("End Motor Position:"));
         endMotorPosField_ = new JTextField("0");
         setTextAttributes(endMotorPosField_, calBoxSize);
-        endMotorPosField_.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                prefs_.put(PrefStrings.ENDMOTORPOS, endMotorPosField_.getText());
-            }
-        });
+        tieTextFieldToPrefs(endMotorPosField_, PrefStrings.ENDMOTORPOS);
         calibratePanel.add(endMotorPosField_, "span, growx, wrap");
 
         calibratePanel.add(new JLabel("Number of Calibration Steps"));
@@ -262,7 +223,8 @@ public class CalibrationPanel extends JPanel {
         // Combine them all
         add(setupPanel, "span, growx, wrap");
         add(calibratePanel, "span, growx, wrap");
-        UpdatePrefs();
+        UpdateGUIFromPrefs();
+
     }
     
 
@@ -275,6 +237,32 @@ public class CalibrationPanel extends JPanel {
     private void setTextAttributes(JTextField jtf, Dimension size) {
         jtf.setHorizontalAlignment(JTextField.RIGHT);
         jtf.setMinimumSize(size);
+    }
+    
+    /**
+     * Utility function to tie a document listener to a textfield so that all
+     * changes in the textfield are immediately stored in the preferences
+     * @param textComponent
+     * @param prefKey 
+     */
+    private void tieTextFieldToPrefs(final JTextComponent textComponent, final String prefKey){
+      textComponent.getDocument().addDocumentListener(new DocumentListener() {
+
+           @Override
+           public void insertUpdate(DocumentEvent e) {
+              prefs_.put(prefKey, textComponent.getText()); 
+           }
+
+           @Override
+           public void removeUpdate(DocumentEvent e) {
+              prefs_.put(prefKey, textComponent.getText());  
+           }
+
+           @Override
+           public void changedUpdate(DocumentEvent e) {
+              prefs_.put(prefKey, textComponent.getText());  
+           }
+        });
     }
 
     /**
@@ -387,8 +375,25 @@ public class CalibrationPanel extends JPanel {
             @Override
             public void run() {
                 // Editable variables for calibration
-                final double startPosition = Double.parseDouble(PrefStrings.STARTMOTORPOS);
-                final double endPosition = Double.parseDouble(PrefStrings.ENDMOTORPOS);
+               double startPosition;
+               String tmpString = "";
+               try {
+                  tmpString = prefs_.get(PrefStrings.ZEROMOTORPOS, "0.0");
+                  startPosition = Double.parseDouble(tmpString);
+               } catch (NumberFormatException nfe) {
+                  ij.IJ.error("Failed to parse Start Motor Position \"" + tmpString +
+                          "\" to a numeric value");
+                  return;
+               }
+               double endPosition;
+               try {
+                  tmpString = prefs_.get(PrefStrings.ENDMOTORPOS, "0.0");
+                  endPosition = Double.parseDouble(tmpString);
+               } catch (NumberFormatException nfe) {
+                  ij.IJ.error("Failed to parse End Motor Position \"" + tmpString +
+                          "\" to a numeric value");
+                  return;
+               }
                 final int nrAngles = prefs_.getInt(PrefStrings.NUMCALSTEPS, 0);
                 final double angleStepSize = (endPosition - startPosition) / nrAngles;
                 int i = 0;
@@ -482,16 +487,55 @@ public class CalibrationPanel extends JPanel {
         return trueAngle;
     }    
 
-//function to update panel with stored preferences values
-    private void UpdatePrefs() {
+    //function to update panel with stored preferences values
+    public final void UpdateGUIFromPrefs() {
         zeroMotorPosField_.setText(prefs_.get(PrefStrings.ZEROMOTORPOS, ""));
         serialPortBox_.setSelectedItem(prefs_.get(PrefStrings.SERIALPORT, ""));
         tirfDeviceBox_.setSelectedItem(prefs_.get(PrefStrings.TIRFDEVICE, ""));
-        tirfPropBox_.setSelectedItem(prefs_.get(PrefStrings.TIRFPROP, ""));
+        updateDeviceGUI();
+        //tirfPropBox_.setSelectedItem(prefs_.get(PrefStrings.TIRFPROP, ""));
         sampleRIField_.setText(prefs_.get(PrefStrings.SAMPLERI, ""));
         immersionRIField_.setText(prefs_.get(PrefStrings.IMMERSIONRI, ""));
         startMotorPosField_.setText(prefs_.get(PrefStrings.STARTMOTORPOS, ""));
         endMotorPosField_.setText(prefs_.get(PrefStrings.ENDMOTORPOS, ""));
-        numberOfCalibrationStepsSpinner_.setValue(Integer.parseInt(prefs_.get(PrefStrings.NUMCALSTEPS, "")));
+        numberOfCalibrationStepsSpinner_.setValue(Integer.parseInt(
+                prefs_.get(PrefStrings.NUMCALSTEPS, "1")));
     }
+    
+   /**
+    * Updates the device property dropdown box when the TIRF motor device dropdown
+    * changes
+    */     
+   private void updateDeviceGUI() {
+      prefs_.put(PrefStrings.TIRFDEVICE, (String) tirfDeviceBox_.getSelectedItem());
+      try {
+         StrVector deviceProps = core_.getDevicePropertyNames(prefs_.get(PrefStrings.TIRFDEVICE, ""));
+         DefaultComboBoxModel model = (DefaultComboBoxModel) tirfPropBox_.getModel();
+         if (model != null) {
+            model.removeAllElements();
+            for (int i = 0; i < deviceProps.size(); i++) {
+               model.addElement(deviceProps.get(i));
+            }
+            String propBoxItem = prefs_.get(PrefStrings.TIRFPROP, "");
+            tirfPropBox_.setSelectedItem(propBoxItem);
+            ActionListener[] als = tirfPropBox_.getActionListeners();
+            if (als.length == 0) {
+               tirfPropBox_.addActionListener(new ActionListener() {
+                  @Override
+                  public void actionPerformed(ActionEvent evt) {
+                     Object selectedItem = tirfPropBox_.getSelectedItem();
+                     if (selectedItem != null) {
+                        prefs_.put(PrefStrings.TIRFPROP, (String) selectedItem);
+                     }
+
+                  }
+               });
+            }
+         }
+      } catch (Exception ex) {
+         Logger.getLogger(CalibrationPanel.class.getName()).log(Level.SEVERE, null, ex);
+      }
+
+   }
+
 }
