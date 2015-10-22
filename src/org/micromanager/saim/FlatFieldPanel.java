@@ -22,9 +22,10 @@ package org.micromanager.saim;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.gui.GenericDialog;
+import ij.io.FileSaver;
 import ij.plugin.ZProjector;
-import ij.process.ImageConverter;
 import ij.process.ImageProcessor;
+import ij.process.ImageStatistics;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -32,11 +33,8 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.io.File;
 import java.util.prefs.Preferences;
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JFileChooser;
@@ -56,10 +54,7 @@ import org.micromanager.saim.gui.GuiUtils;
 import org.micromanager.utils.FileDialogs;
 import org.micromanager.MMStudio;
 import org.micromanager.acquisition.MMAcquisition;
-import org.micromanager.acquisition.MMImageCache;
-import org.micromanager.api.ImageCache;
 import org.micromanager.utils.ImageUtils;
-import org.micromanager.utils.MDUtils;
 import org.micromanager.utils.MMScriptException;
 
 /**
@@ -275,8 +270,8 @@ public class FlatFieldPanel extends JPanel {
         flatfieldPanel.add(ffdirRootButton_, "wrap");
 
         // set name prefix
-        flatfieldPanel.add(new JLabel("Name Prefix:"));
-        ffnamePrefixField_ = new JTextField("");
+        flatfieldPanel.add(new JLabel("Name:"));
+        ffnamePrefixField_ = new JTextField("Flatfield");
         setTextAttributes(ffnamePrefixField_, componentSize);
         ffnamePrefixField_.addActionListener(new ActionListener() {
             @Override
@@ -491,17 +486,13 @@ public class FlatFieldPanel extends JPanel {
                 if (acqs.isEmpty()) {
                     return;
                 }
+                ImageStack flatFieldStack = null;
                 try {
-                    String acq = gui_.getUniqueAcquisitionName("Flatfield");
-                    String[] availableNames = gui_.getAcquisitionNames();
                     MMAcquisition mAcq = gui_.getAcquisition(acqs.get(0));
-                    ImageCache cache = gui_.getAcquisitionImageCache(acqs.get(0));
-                    gui_.openAcquisition(acq,
-                            ffdirRootField_.getText(), 1, 1, mAcq.getSlices(), 1,
-                            true, // Show
-                            true); // Save <--change this to save files in root directory
+                    flatFieldStack = new ImageStack(mAcq.getWidth(), 
+                            mAcq.getHeight(), mAcq.getSlices() );
                     for (int slice = 0; slice < mAcq.getSlices(); slice++) {
-                        // gui_.addImageToAcquisition(acq, 0, 0, slice, 0, cache.getImage(0, 0, slice, 0));
+                       // make a stack to use to calculate the median of all our flatfield acquisitions
                         ImageStack stack = new ImageStack(mAcq.getWidth(), mAcq.getHeight(), acqs.size());
                         for (int xyPos = 0; xyPos < acqs.size(); xyPos++) {
                             ImageProcessor proc = ImageUtils.makeProcessor(
@@ -514,12 +505,17 @@ public class FlatFieldPanel extends JPanel {
                         zProj.setMethod(ZProjector.MEDIAN_METHOD);
                         zProj.doProjection();
                         ImagePlus median = zProj.getProjection();
-                        // the projection gives a 32 bit result.  Convert to 16 bit so that we can stick it back into our acquisition
-                        ImageConverter ic = new ImageConverter(median);
-                        ic.convertToGray16();
-                        TaggedImage tImg = ImageUtils.makeTaggedImage(median.getProcessor());
-                        MDUtils.setPixelType(tImg.tags, median.getType());
-                        gui_.addImageToAcquisition(acq, 0, 0, slice, 0, tImg);
+                        
+                        // TODO: subtract background here
+                        
+                        // Normalize the median image so that the average is 1:
+                        ImageStatistics stats = median.getStatistics();
+                        float mean = (float) stats.mean;
+                        ImageProcessor iProc = median.getProcessor();
+                        for (int i = 0; i < iProc.getPixelCount(); i++) {
+                           iProc.setf(i, iProc.getf(i) / mean);
+                        }
+                        flatFieldStack.setProcessor(median.getProcessor(), slice + 1);
                     }
                 } catch (MMScriptException ex) {
                     ex.printStackTrace();
@@ -527,7 +523,24 @@ public class FlatFieldPanel extends JPanel {
                 } catch (Exception ex) {
                     ex.printStackTrace();
                 } finally {
-                    gui_.closeAllAcquisitions();
+                     gui_.closeAllAcquisitions();
+                     // store the flatfield Stack
+                     if (flatFieldStack != null) {
+                        ImagePlus flatField = new ImagePlus("flatField", 
+                             flatFieldStack);
+                        FileSaver fs = new FileSaver(flatField);
+                        String path = ffdirRootField_.getText() + File.separator +
+                             "Flatfield";
+                        File tmpFile = new File(path);
+                        if (tmpFile.canRead()) {
+                           if (!ij.IJ.showMessageWithCancel("Flatfield", 
+                                   "File \"" + path + "\" exists.  Overwrite?")) {
+                              return;
+                           }
+                        }
+                        fs.saveAsTiffStack(path);
+                    }
+                    
                 }
             }
         }
@@ -545,7 +558,7 @@ public class FlatFieldPanel extends JPanel {
         doubleZeroCheckBox_.setSelected(Boolean.parseBoolean(prefs_.get(PrefStrings.DOUBLEZERO, "")));
         ffsaveImagesCheckBox_.setSelected(Boolean.parseBoolean(prefs_.get(PrefStrings.FFSAVEIMAGES, "")));
         ffdirRootField_.setText(prefs_.get(PrefStrings.FFDIRROOT, ""));
-        ffnamePrefixField_.setText(prefs_.get(PrefStrings.FFNAMEPREFIX, ""));
+        ffnamePrefixField_.setText(prefs_.get(PrefStrings.FFNAMEPREFIX, "Flatfield"));
         coeff3Field_.setText(prefs_.get(PrefStrings.COEFF3, ""));
         coeff2Field_.setText(prefs_.get(PrefStrings.COEFF2, ""));
         coeff1Field_.setText(prefs_.get(PrefStrings.COEFF1, ""));

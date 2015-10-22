@@ -451,7 +451,7 @@ public class AcquisitionPanel extends JPanel {
    
    //function to add preferences values to each field that uses them
    private void UpdatePrefs() {
-        angleStepSizeSpinner_.setValue(Double.parseDouble(prefs_.get(PrefStrings.ANGLESTEPSIZE, "")));
+        angleStepSizeSpinner_.setValue(Double.parseDouble(prefs_.get(PrefStrings.ANGLESTEPSIZE, "0.0")));
         startAngleField_.setText(prefs_.get(PrefStrings.STARTANGLE, ""));
         doubleZeroCheckBox_.setSelected(Boolean.parseBoolean(prefs_.get(PrefStrings.DOUBLEZERO, "")));
         saveImagesCheckBox_.setSelected(Boolean.parseBoolean(prefs_.get(PrefStrings.ACQSAVEIMAGES, "")));
