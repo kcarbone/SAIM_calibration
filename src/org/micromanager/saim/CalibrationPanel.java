@@ -38,6 +38,9 @@ import javax.swing.JToggleButton;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.text.JTextComponent;
 import mmcorej.CMMCore;
 import mmcorej.DeviceType;
 import mmcorej.StrVector;
@@ -139,12 +142,7 @@ public class CalibrationPanel extends JPanel {
         setupPanel.add(new JLabel("Set 0 Deg. Motor Position:"));
         zeroMotorPosField_ = new JTextField("0");
         setTextAttributes(zeroMotorPosField_, componentSize);
-        zeroMotorPosField_.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                prefs_.put(PrefStrings.ZEROMOTORPOS, zeroMotorPosField_.getText());
-            }
-        });
+        tieTextFieldToPrefs(zeroMotorPosField_, PrefStrings.ZEROMOTORPOS);
         setupPanel.add(zeroMotorPosField_, "span, growx, wrap");
 
         // calculate offset button
@@ -171,47 +169,27 @@ public class CalibrationPanel extends JPanel {
         calibratePanel.add(new JLabel("Refractive Index of Sample:"));
         sampleRIField_ = new JTextField("0");
         setTextAttributes(sampleRIField_, calBoxSize);
-        sampleRIField_.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                prefs_.put(PrefStrings.SAMPLERI, sampleRIField_.getText());
-            }
-        });
+        tieTextFieldToPrefs(sampleRIField_, PrefStrings.SAMPLERI);
         calibratePanel.add(sampleRIField_, "span, growx, wrap");
 
         // immersion RI
         calibratePanel.add(new JLabel("Refractive Index of Immersion Medium:"));
         immersionRIField_ = new JTextField("0");
-        setTextAttributes(immersionRIField_, calBoxSize);
-        immersionRIField_.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                prefs_.put(PrefStrings.IMMERSIONRI, immersionRIField_.getText());
-            }
-        });
+        setTextAttributes(immersionRIField_, calBoxSize);        
+        tieTextFieldToPrefs(immersionRIField_, PrefStrings.IMMERSIONRI);
         calibratePanel.add(immersionRIField_, "span, growx, wrap");
 
         // start motor position
         calibratePanel.add(new JLabel("Start Motor Position:"));
         startMotorPosField_ = new JTextField("0");
         setTextAttributes(startMotorPosField_, calBoxSize);
-        startMotorPosField_.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                prefs_.put(PrefStrings.STARTMOTORPOS, startMotorPosField_.getText());
-            }
-        });
+        tieTextFieldToPrefs(startMotorPosField_, PrefStrings.STARTMOTORPOS);
         calibratePanel.add(startMotorPosField_, "span, growx, wrap");
 
         calibratePanel.add(new JLabel("End Motor Position:"));
         endMotorPosField_ = new JTextField("0");
         setTextAttributes(endMotorPosField_, calBoxSize);
-        endMotorPosField_.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                prefs_.put(PrefStrings.ENDMOTORPOS, endMotorPosField_.getText());
-            }
-        });
+        tieTextFieldToPrefs(endMotorPosField_, PrefStrings.ENDMOTORPOS);
         calibratePanel.add(endMotorPosField_, "span, growx, wrap");
 
         calibratePanel.add(new JLabel("Number of Calibration Steps"));
@@ -246,6 +224,7 @@ public class CalibrationPanel extends JPanel {
         add(setupPanel, "span, growx, wrap");
         add(calibratePanel, "span, growx, wrap");
         UpdateGUIFromPrefs();
+
     }
     
 
@@ -258,6 +237,32 @@ public class CalibrationPanel extends JPanel {
     private void setTextAttributes(JTextField jtf, Dimension size) {
         jtf.setHorizontalAlignment(JTextField.RIGHT);
         jtf.setMinimumSize(size);
+    }
+    
+    /**
+     * Utility function to tie a document listener to a textfield so that all
+     * changes in the textfield are immediately stored in the preferences
+     * @param textComponent
+     * @param prefKey 
+     */
+    private void tieTextFieldToPrefs(final JTextComponent textComponent, final String prefKey){
+      textComponent.getDocument().addDocumentListener(new DocumentListener() {
+
+           @Override
+           public void insertUpdate(DocumentEvent e) {
+              prefs_.put(prefKey, textComponent.getText()); 
+           }
+
+           @Override
+           public void removeUpdate(DocumentEvent e) {
+              prefs_.put(prefKey, textComponent.getText());  
+           }
+
+           @Override
+           public void changedUpdate(DocumentEvent e) {
+              prefs_.put(prefKey, textComponent.getText());  
+           }
+        });
     }
 
     /**
@@ -370,8 +375,25 @@ public class CalibrationPanel extends JPanel {
             @Override
             public void run() {
                 // Editable variables for calibration
-                final double startPosition = Double.parseDouble(PrefStrings.STARTMOTORPOS);
-                final double endPosition = Double.parseDouble(PrefStrings.ENDMOTORPOS);
+               double startPosition;
+               String tmpString = "";
+               try {
+                  tmpString = prefs_.get(PrefStrings.ZEROMOTORPOS, "0.0");
+                  startPosition = Double.parseDouble(tmpString);
+               } catch (NumberFormatException nfe) {
+                  ij.IJ.error("Failed to parse Start Motor Position \"" + tmpString +
+                          "\" to a numeric value");
+                  return;
+               }
+               double endPosition;
+               try {
+                  tmpString = prefs_.get(PrefStrings.ENDMOTORPOS, "0.0");
+                  endPosition = Double.parseDouble(tmpString);
+               } catch (NumberFormatException nfe) {
+                  ij.IJ.error("Failed to parse End Motor Position \"" + tmpString +
+                          "\" to a numeric value");
+                  return;
+               }
                 final int nrAngles = prefs_.getInt(PrefStrings.NUMCALSTEPS, 0);
                 final double angleStepSize = (endPosition - startPosition) / nrAngles;
                 int i = 0;
@@ -466,7 +488,7 @@ public class CalibrationPanel extends JPanel {
     }    
 
     //function to update panel with stored preferences values
-    private void UpdateGUIFromPrefs() {
+    public final void UpdateGUIFromPrefs() {
         zeroMotorPosField_.setText(prefs_.get(PrefStrings.ZEROMOTORPOS, ""));
         serialPortBox_.setSelectedItem(prefs_.get(PrefStrings.SERIALPORT, ""));
         tirfDeviceBox_.setSelectedItem(prefs_.get(PrefStrings.TIRFDEVICE, ""));

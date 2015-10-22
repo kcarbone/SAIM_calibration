@@ -135,7 +135,7 @@ public class AcquisitionPanel extends JPanel {
 
       //Set calibration values
       //x3 coefficient
-      calPanel_.add(new JLabel("x^3: "));
+      calPanel_.add(new JLabel("<html>x<sup>3</sup>: </html>"));
       coeff3Field_ = new JTextField("");
       setTextAttributes(coeff3Field_, componentSize);
       coeff3Field_.addKeyListener(new KeyListener() {
@@ -156,7 +156,7 @@ public class AcquisitionPanel extends JPanel {
       calPanel_.add(coeff3Field_, "span, center, wrap");
 
       //x2 coefficient
-      calPanel_.add(new JLabel("x^2: "));
+      calPanel_.add(new JLabel("<html>x<sup>2</sup>: </html>"));
       coeff2Field_ = new JTextField("");
       setTextAttributes(coeff2Field_, componentSize);
       coeff2Field_.addKeyListener(new KeyListener() {
@@ -198,7 +198,7 @@ public class AcquisitionPanel extends JPanel {
       calPanel_.add(coeff1Field_, "span, center, wrap");
 
       //x0 constant
-      calPanel_.add(new JLabel("x^0: "));
+      calPanel_.add(new JLabel("<html>x<sup>0</sup>: </html>"));
       coeff0Field_ = new JTextField("");
       setTextAttributes(coeff0Field_, componentSize);
       coeff0Field_.addKeyListener(new KeyListener() {
@@ -306,7 +306,8 @@ public class AcquisitionPanel extends JPanel {
       add(setupPanel, "span, growx, wrap");
       add(calPanel_, "span, growx, wrap");
       add(acquirePanel, "span, growx, wrap");
-      UpdatePrefs();
+      UpdateGUIFromPrefs();
+
    }
 
    /**
@@ -454,7 +455,7 @@ public class AcquisitionPanel extends JPanel {
    }
    
    //function to add preferences values to each field that uses them
-   private void UpdatePrefs() {
+   public final void UpdateGUIFromPrefs() {
         angleStepSizeSpinner_.setValue(Double.parseDouble(prefs_.get(PrefStrings.ANGLESTEPSIZE, "0.0")));
         startAngleField_.setText(prefs_.get(PrefStrings.STARTANGLE, ""));
         doubleZeroCheckBox_.setSelected(Boolean.parseBoolean(prefs_.get(PrefStrings.DOUBLEZERO, "")));
