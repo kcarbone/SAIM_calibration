@@ -22,7 +22,7 @@ package org.micromanager.saim;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.gui.GenericDialog;
-import ij.io.FileSaver;
+import ij.gui.NonBlockingGenericDialog;
 import ij.plugin.ZProjector;
 import ij.process.ImageProcessor;
 import ij.process.ImageStatistics;
@@ -31,13 +31,10 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
-import java.io.File;
 import java.util.prefs.Preferences;
 import java.util.ArrayList;
 import java.util.List;
-import javax.swing.JButton;
 import javax.swing.JCheckBox;
-import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
@@ -51,8 +48,6 @@ import mmcorej.TaggedImage;
 import net.miginfocom.swing.MigLayout;
 import org.micromanager.api.ScriptInterface;
 import org.micromanager.saim.gui.GuiUtils;
-import org.micromanager.utils.FileDialogs;
-import org.micromanager.MMStudio;
 import org.micromanager.acquisition.MMAcquisition;
 import org.micromanager.utils.ImageUtils;
 import org.micromanager.utils.MMScriptException;
@@ -71,11 +66,7 @@ public class FlatFieldPanel extends JPanel {
     private final JTextField startAngleField_;
     private final JCheckBox doubleZeroCheckBox_;
     private final JPanel calPanel_;
-    private final JCheckBox ffsaveImagesCheckBox_;
-    private final JFileChooser ffdirRootChooser_;
-    private final JTextField ffdirRootField_;
-    private final JButton ffdirRootButton_;
-    private final JTextField ffnamePrefixField_;
+    private final JCheckBox ffShowImagesCheckBox_;
     private final JToggleButton runButton_;
     private JTextField coeff3Field_;
     private JTextField coeff2Field_;
@@ -112,9 +103,18 @@ public class FlatFieldPanel extends JPanel {
         setupPanel.add(new JLabel("Start Angle:"));
         startAngleField_ = new JTextField("");
         setTextAttributes(startAngleField_, componentSize);
-        startAngleField_.addActionListener(new ActionListener() {
+
+        startAngleField_.addKeyListener(new KeyListener() {
             @Override
-            public void actionPerformed(ActionEvent e) {
+            public void keyTyped(KeyEvent ke) {
+            }
+
+            @Override
+            public void keyPressed(KeyEvent ke) {
+            }
+
+            @Override
+            public void keyReleased(KeyEvent ke) {
                 prefs_.put(PrefStrings.STARTANGLE, startAngleField_.getText());
             }
         });
@@ -147,7 +147,6 @@ public class FlatFieldPanel extends JPanel {
         coeff3Field_ = new JTextField("");
         setTextAttributes(coeff3Field_, componentSize);
         coeff3Field_.addKeyListener(new KeyListener() {
-
             @Override
             public void keyTyped(KeyEvent ke) {
             }
@@ -232,6 +231,7 @@ public class FlatFieldPanel extends JPanel {
         flatfieldPanel.setBorder(GuiUtils.makeTitledBorder("FlatField"));
         final Dimension acqBoxSize = new Dimension(130, 30);
 
+        /*
         // set directory root file chooser
         ffdirRootChooser_ = new JFileChooser("");
         ffdirRootChooser_.setCurrentDirectory(new java.io.File("."));
@@ -243,11 +243,13 @@ public class FlatFieldPanel extends JPanel {
                 prefs_.put(PrefStrings.FFDIRROOT, ffdirRootChooser_.getName());
             }
         });
+        */
 
         // set directory root text field
         flatfieldPanel.add(new JLabel("Selecting \"Run FlatField\" will prompt you to take multiple"), "span, wrap");
         flatfieldPanel.add(new JLabel("SAIM acquisitions at different positions for correction"), "span, wrap");
         flatfieldPanel.add(new JLabel("of final images."), "span, wrap");
+        /*
         flatfieldPanel.add(new JLabel("Directory Root:"));
         ffdirRootField_ = new JTextField("");
         setTextAttributes(ffdirRootField_, componentSize);
@@ -280,20 +282,21 @@ public class FlatFieldPanel extends JPanel {
             }
         });
         flatfieldPanel.add(ffnamePrefixField_, "span, growx, wrap");
+        */
 
         // set save images
-        ffsaveImagesCheckBox_ = new JCheckBox("Save Images");
-        ffsaveImagesCheckBox_.addActionListener(new ActionListener() {
+        ffShowImagesCheckBox_ = new JCheckBox("Show Images");
+        ffShowImagesCheckBox_.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if (ffsaveImagesCheckBox_.isSelected()) {
-                    prefs_.putBoolean(PrefStrings.FFSAVEIMAGES, true);
+                if (ffShowImagesCheckBox_.isSelected()) {
+                    prefs_.putBoolean(PrefStrings.FFSHOWIMAGES, true);
                 } else {
-                    prefs_.putBoolean(PrefStrings.FFSAVEIMAGES, false);
+                    prefs_.putBoolean(PrefStrings.FFSHOWIMAGES, false);
                 }
             }
         });
-        flatfieldPanel.add(ffsaveImagesCheckBox_, "span 2, growx, wrap");
+        flatfieldPanel.add(ffShowImagesCheckBox_, "span 2, growx, wrap");
 
         // set run button
         runButton_ = new JToggleButton("Run FlatField");
@@ -315,7 +318,7 @@ public class FlatFieldPanel extends JPanel {
         add(setupPanel, "span, growx, wrap");
         add(calPanel_, "span, growx, wrap");
         add(flatfieldPanel, "span, growx, wrap");
-        UpdatePrefs();
+        UpdateFromPrefs();
     }
 
     /**
@@ -328,16 +331,8 @@ public class FlatFieldPanel extends JPanel {
         jtf.setHorizontalAlignment(JTextField.RIGHT);
         jtf.setMinimumSize(size);
     }
+    
 
-    protected void setRootDirectory() {
-        File result = FileDialogs.openDir(null,
-                "Please choose a directory root for image data",
-                MMStudio.MM_DATA_SET);
-        if (result != null) {
-            ffdirRootField_.setText(result.getAbsolutePath());
-            //acqEng_.setRootName(result.getAbsolutePath());
-        }
-    }
 
     /**
      * User is supposed to set up the acquisition in the micromanager panel.
@@ -360,22 +355,22 @@ public class FlatFieldPanel extends JPanel {
                 int nrAngles = (Integer) Math.round((float) tempnrAngles);
 
                 //gui_.closeAllAcquisitions();
-                acq = gui_.getUniqueAcquisitionName(ffnamePrefixField_.getText());
+                acq = gui_.getUniqueAcquisitionName("FlatField");
 
                 int frames = nrAngles + 1;
                 if (doubleZeroCheckBox_.isSelected()) {
                     frames = nrAngles + 2;
                 }
 
-                if (ffsaveImagesCheckBox_.isSelected()) {
+                if (ffShowImagesCheckBox_.isSelected()) {
                     gui_.openAcquisition(acq,
-                            ffdirRootField_.getText(), 1, 1, frames, 1,
+                            "", 1, 1, frames, 1,
                             true, // Show
-                            true); // Save <--change this to save files in root directory
+                            false); // Save <--change this to save files in root directory
                 } else {
                     gui_.openAcquisition(acq,
-                            ffdirRootField_.getText(), 1, 1, frames, 1,
-                            true, // Show
+                            "", 1, 1, frames, 1,
+                            false, // Show
                             false); // Save <--change this to save files in root directory
                 }
 
@@ -469,7 +464,7 @@ public class FlatFieldPanel extends JPanel {
                 int count = 1;
                 List<String> acqs = new ArrayList<String>();
                 while (true) {
-                    GenericDialog okWindow = new GenericDialog("FlatField Image " + Integer.toString(count));
+                    GenericDialog okWindow = new NonBlockingGenericDialog("FlatField Image " + Integer.toString(count));
                     okWindow.setCancelLabel("Done");
                     okWindow.addMessage("Move stage to new position and click OK to start acquisition.");
                     okWindow.showDialog();
@@ -528,17 +523,7 @@ public class FlatFieldPanel extends JPanel {
                      if (flatFieldStack != null) {
                         ImagePlus flatField = new ImagePlus("flatField", 
                              flatFieldStack);
-                        FileSaver fs = new FileSaver(flatField);
-                        String path = ffdirRootField_.getText() + File.separator +
-                             "Flatfield";
-                        File tmpFile = new File(path);
-                        if (tmpFile.canRead()) {
-                           if (!ij.IJ.showMessageWithCancel("Flatfield", 
-                                   "File \"" + path + "\" exists.  Overwrite?")) {
-                              return;
-                           }
-                        }
-                        fs.saveAsTiffStack(path);
+                        flatField.show();
                     }
                     
                 }
@@ -552,13 +537,11 @@ public class FlatFieldPanel extends JPanel {
 
     //function to add preferences values to each field that uses them
 
-    private void UpdatePrefs() {
+    private void UpdateFromPrefs() {
         angleStepSizeSpinner_.setValue(Double.parseDouble(prefs_.get(PrefStrings.ANGLESTEPSIZE, "")));
         startAngleField_.setText(prefs_.get(PrefStrings.STARTANGLE, ""));
         doubleZeroCheckBox_.setSelected(Boolean.parseBoolean(prefs_.get(PrefStrings.DOUBLEZERO, "")));
-        ffsaveImagesCheckBox_.setSelected(Boolean.parseBoolean(prefs_.get(PrefStrings.FFSAVEIMAGES, "")));
-        ffdirRootField_.setText(prefs_.get(PrefStrings.FFDIRROOT, ""));
-        ffnamePrefixField_.setText(prefs_.get(PrefStrings.FFNAMEPREFIX, "Flatfield"));
+        ffShowImagesCheckBox_.setSelected(Boolean.parseBoolean(prefs_.get(PrefStrings.FFSHOWIMAGES, "")));
         coeff3Field_.setText(prefs_.get(PrefStrings.COEFF3, ""));
         coeff2Field_.setText(prefs_.get(PrefStrings.COEFF2, ""));
         coeff1Field_.setText(prefs_.get(PrefStrings.COEFF1, ""));
