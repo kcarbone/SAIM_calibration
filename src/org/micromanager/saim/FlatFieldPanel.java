@@ -34,7 +34,9 @@ import java.awt.event.KeyListener;
 import java.util.prefs.Preferences;
 import java.util.ArrayList;
 import java.util.List;
+import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
@@ -68,6 +70,9 @@ public class FlatFieldPanel extends JPanel {
     private final JPanel calPanel_;
     private final JCheckBox ffShowImagesCheckBox_;
     private final JToggleButton runButton_;
+    private final JFileChooser backgroundFileChooser_;
+    private final JTextField backgroundFileField_;
+    private final JButton backgroundFileButton_;
     private JTextField coeff3Field_;
     private JTextField coeff2Field_;
     private JTextField coeff1Field_;
@@ -229,62 +234,53 @@ public class FlatFieldPanel extends JPanel {
         JPanel flatfieldPanel = new JPanel(new MigLayout(
                 "", ""));
         flatfieldPanel.setBorder(GuiUtils.makeTitledBorder("FlatField"));
-        final Dimension acqBoxSize = new Dimension(130, 30);
 
-        /*
+
         // set directory root file chooser
-        ffdirRootChooser_ = new JFileChooser("");
-        ffdirRootChooser_.setCurrentDirectory(new java.io.File("."));
-        ffdirRootChooser_.setDialogTitle("Directory Root");
-        ffdirRootChooser_.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-        ffdirRootChooser_.addActionListener(new ActionListener() {
+        backgroundFileChooser_ = new JFileChooser("");
+        backgroundFileChooser_.setCurrentDirectory(new java.io.File("."));
+        backgroundFileChooser_.setDialogTitle("Background Image");
+        backgroundFileChooser_.setFileSelectionMode(JFileChooser.FILES_ONLY);
+        backgroundFileChooser_.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                prefs_.put(PrefStrings.FFDIRROOT, ffdirRootChooser_.getName());
+                prefs_.put(PrefStrings.FFBACKGROUNDFILE, 
+                        backgroundFileChooser_.getName());
             }
         });
-        */
 
-        // set directory root text field
+        flatfieldPanel.add(new JLabel("Background Image"));
+        backgroundFileField_ = new JTextField("");
+        setTextAttributes(backgroundFileField_, componentSize);
+        backgroundFileField_.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                prefs_.put(PrefStrings.FFDIRROOT, backgroundFileField_.getText());
+            }
+        });
+        flatfieldPanel.add(backgroundFileField_);
+
+        //set directory chooser button
+        backgroundFileButton_ = new JButton("...");
+        backgroundFileButton_.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+               if (backgroundFileChooser_.showOpenDialog(null) ==
+                       JFileChooser.APPROVE_OPTION) {
+                  backgroundFileField_.setText(
+                          backgroundFileChooser_.getSelectedFile().getPath());
+               }
+            }
+        });
+        flatfieldPanel.add(backgroundFileButton_, "wrap");
+
+        
+        // Give instructions
         flatfieldPanel.add(new JLabel("Selecting \"Run FlatField\" will prompt you to take multiple"), "span, wrap");
         flatfieldPanel.add(new JLabel("SAIM acquisitions at different positions for correction"), "span, wrap");
         flatfieldPanel.add(new JLabel("of final images."), "span, wrap");
-        /*
-        flatfieldPanel.add(new JLabel("Directory Root:"));
-        ffdirRootField_ = new JTextField("");
-        setTextAttributes(ffdirRootField_, componentSize);
-        ffdirRootField_.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                prefs_.put(PrefStrings.FFDIRROOT, ffdirRootField_.getText());
-            }
-        });
-        flatfieldPanel.add(ffdirRootField_);
 
-        //set directory chooser button
-        ffdirRootButton_ = new JButton("...");
-        ffdirRootButton_.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                setRootDirectory();
-            }
-        });
-        flatfieldPanel.add(ffdirRootButton_, "wrap");
-
-        // set name prefix
-        flatfieldPanel.add(new JLabel("Name:"));
-        ffnamePrefixField_ = new JTextField("Flatfield");
-        setTextAttributes(ffnamePrefixField_, componentSize);
-        ffnamePrefixField_.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                prefs_.put(PrefStrings.FFNAMEPREFIX, ffnamePrefixField_.getText());
-            }
-        });
-        flatfieldPanel.add(ffnamePrefixField_, "span, growx, wrap");
-        */
-
-        // set save images
+        // create show images checkbox
         ffShowImagesCheckBox_ = new JCheckBox("Show Images");
         ffShowImagesCheckBox_.addActionListener(new ActionListener() {
             @Override
@@ -298,7 +294,7 @@ public class FlatFieldPanel extends JPanel {
         });
         flatfieldPanel.add(ffShowImagesCheckBox_, "span 2, growx, wrap");
 
-        // set run button
+        // create run button
         runButton_ = new JToggleButton("Run FlatField");
         runButton_.addActionListener(new ActionListener() {
             @Override

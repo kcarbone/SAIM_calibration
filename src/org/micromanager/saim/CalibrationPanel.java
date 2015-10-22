@@ -262,7 +262,7 @@ public class CalibrationPanel extends JPanel {
         // Combine them all
         add(setupPanel, "span, growx, wrap");
         add(calibratePanel, "span, growx, wrap");
-        UpdatePrefs();
+        UpdateGUIFromPrefs();
     }
     
 
@@ -482,8 +482,8 @@ public class CalibrationPanel extends JPanel {
         return trueAngle;
     }    
 
-//function to update panel with stored preferences values
-    private void UpdatePrefs() {
+    //function to update panel with stored preferences values
+    private void UpdateGUIFromPrefs() {
         zeroMotorPosField_.setText(prefs_.get(PrefStrings.ZEROMOTORPOS, ""));
         serialPortBox_.setSelectedItem(prefs_.get(PrefStrings.SERIALPORT, ""));
         tirfDeviceBox_.setSelectedItem(prefs_.get(PrefStrings.TIRFDEVICE, ""));
@@ -492,6 +492,7 @@ public class CalibrationPanel extends JPanel {
         immersionRIField_.setText(prefs_.get(PrefStrings.IMMERSIONRI, ""));
         startMotorPosField_.setText(prefs_.get(PrefStrings.STARTMOTORPOS, ""));
         endMotorPosField_.setText(prefs_.get(PrefStrings.ENDMOTORPOS, ""));
-        numberOfCalibrationStepsSpinner_.setValue(Integer.parseInt(prefs_.get(PrefStrings.NUMCALSTEPS, "")));
+        numberOfCalibrationStepsSpinner_.setValue(Integer.parseInt(
+                prefs_.get(PrefStrings.NUMCALSTEPS, "1")));
     }
 }
