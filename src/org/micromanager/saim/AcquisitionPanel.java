@@ -20,6 +20,7 @@
 package org.micromanager.saim;
 
 import java.awt.Dimension;
+import java.awt.dnd.DropTarget;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -44,6 +45,7 @@ import org.micromanager.api.ScriptInterface;
 import org.micromanager.saim.gui.GuiUtils;
 import org.micromanager.utils.FileDialogs;
 import org.micromanager.MMStudio;
+import org.micromanager.saim.gui.DragFileToTextField;
 
 /**
  *
@@ -66,10 +68,10 @@ public class AcquisitionPanel extends JPanel {
    private final JButton acqdirRootButton_;
    private final JTextField acqnamePrefixField_;
    private final JToggleButton runButton_;
-   private JTextField coeff3Field_;
-   private JTextField coeff2Field_;
-   private JTextField coeff1Field_;
-   private JTextField coeff0Field_;
+   private final JTextField coeff3Field_;
+   private final JTextField coeff2Field_;
+   private final JTextField coeff1Field_;
+   private final JTextField coeff0Field_;
 
    public AcquisitionPanel(ScriptInterface gui, Preferences prefs) {
       super(new MigLayout(
@@ -244,6 +246,8 @@ public class AcquisitionPanel extends JPanel {
             prefs_.put(PrefStrings.ACQDIRROOT, acqdirRootField_.getText());
          }
       });
+      DropTarget dt = new DropTarget(acqdirRootField_,
+              new DragFileToTextField(acqdirRootField_, true));
       acquirePanel.add(acqdirRootField_);
 
       //set directory chooser button
@@ -343,7 +347,7 @@ public class AcquisitionPanel extends JPanel {
 
             double startAngle = Double.parseDouble(startAngleField_.getText());
             double angleStepSize = prefs_.getDouble(PrefStrings.ANGLESTEPSIZE, 0);
-            String acq = "";
+            String acq;
             if (startAngle % angleStepSize == 0) {
                try {
                   // Set these variables to the correct values and leave

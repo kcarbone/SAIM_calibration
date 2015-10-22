@@ -50,6 +50,7 @@ public class SAIMFrame extends MMFrame {
      * Constructor
      *
      * @param gui - Reference to MM script interface
+    * @throws java.lang.Exception
     */
    public SAIMFrame(ScriptInterface gui) throws Exception {
       gui_ = gui;

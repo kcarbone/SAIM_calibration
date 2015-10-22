@@ -23,26 +23,32 @@ import ij.ImagePlus;
 import ij.ImageStack;
 import ij.gui.GenericDialog;
 import ij.gui.NonBlockingGenericDialog;
+import ij.plugin.ImageCalculator;
 import ij.plugin.ZProjector;
 import ij.process.ImageProcessor;
 import ij.process.ImageStatistics;
 import java.awt.Dimension;
+import java.awt.FileDialog;
+import java.awt.dnd.DropTarget;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.io.File;
 import java.util.prefs.Preferences;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JFileChooser;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import javax.swing.JToggleButton;
 import javax.swing.SpinnerNumberModel;
+import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import mmcorej.CMMCore;
@@ -51,6 +57,7 @@ import net.miginfocom.swing.MigLayout;
 import org.micromanager.api.ScriptInterface;
 import org.micromanager.saim.gui.GuiUtils;
 import org.micromanager.acquisition.MMAcquisition;
+import org.micromanager.saim.gui.DragFileToTextField;
 import org.micromanager.utils.ImageUtils;
 import org.micromanager.utils.MMScriptException;
 
@@ -70,7 +77,7 @@ public class FlatFieldPanel extends JPanel {
     private final JPanel calPanel_;
     private final JCheckBox ffShowImagesCheckBox_;
     private final JToggleButton runButton_;
-    private final JFileChooser backgroundFileChooser_;
+    private final FileDialog backgroundFileChooser_;
     private final JTextField backgroundFileField_;
     private final JButton backgroundFileButton_;
     private JTextField coeff3Field_;
@@ -236,19 +243,12 @@ public class FlatFieldPanel extends JPanel {
         flatfieldPanel.setBorder(GuiUtils.makeTitledBorder("FlatField"));
 
 
-        // set directory root file chooser
-        backgroundFileChooser_ = new JFileChooser("");
-        backgroundFileChooser_.setCurrentDirectory(new java.io.File("."));
-        backgroundFileChooser_.setDialogTitle("Background Image");
-        backgroundFileChooser_.setFileSelectionMode(JFileChooser.FILES_ONLY);
-        backgroundFileChooser_.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                prefs_.put(PrefStrings.FFBACKGROUNDFILE, 
-                        backgroundFileChooser_.getName());
-            }
-        });
-
+        // background file file chooser
+        backgroundFileChooser_ = new FileDialog( (JFrame) 
+                SwingUtilities.getWindowAncestor(this));
+        backgroundFileChooser_.setDirectory( new java.io.File(".").getPath());
+        backgroundFileChooser_.setTitle("Background Image");
+        
         flatfieldPanel.add(new JLabel("Background Image"));
         backgroundFileField_ = new JTextField("");
         setTextAttributes(backgroundFileField_, componentSize);
@@ -258,18 +258,21 @@ public class FlatFieldPanel extends JPanel {
                 prefs_.put(PrefStrings.FFDIRROOT, backgroundFileField_.getText());
             }
         });
+        DropTarget dt = new DropTarget (backgroundFileField_, 
+                new DragFileToTextField(backgroundFileField_, false));
         flatfieldPanel.add(backgroundFileField_);
 
-        //set directory chooser button
+        // background file chooser button
         backgroundFileButton_ = new JButton("...");
         backgroundFileButton_.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-               if (backgroundFileChooser_.showOpenDialog(null) ==
-                       JFileChooser.APPROVE_OPTION) {
-                  backgroundFileField_.setText(
-                          backgroundFileChooser_.getSelectedFile().getPath());
-               }
+               backgroundFileChooser_.setVisible(true);
+               String file = backgroundFileChooser_.getFile();
+               String directory = backgroundFileChooser_.getDirectory();
+               if (file != null && directory != null)
+                  backgroundFileField_.setText(directory + File.separator + file);
+                  prefs_.put(PrefStrings.FFDIRROOT, backgroundFileField_.getText());
             }
         });
         flatfieldPanel.add(backgroundFileButton_, "wrap");
@@ -447,100 +450,129 @@ public class FlatFieldPanel extends JPanel {
      * will acquire a SAIM scan (RunAcquisition) at each position
      *
      */
-    private void RunFlatField() {
+   private void RunFlatField() {
 
-        class AcqThread extends Thread {
+      class AcqThread extends Thread {
 
-            AcqThread(String threadName) {
-                super(threadName);
+         AcqThread(String threadName) {
+            super(threadName);
+         }
+
+         @Override
+         public void run() {
+            int count = 1;
+            List<String> acqs = new ArrayList<String>();
+            while (true) {
+               GenericDialog okWindow = new NonBlockingGenericDialog("FlatField Image " + Integer.toString(count));
+               okWindow.setCancelLabel("Done");
+               okWindow.addMessage("Move stage to new position and click OK to start acquisition.");
+               okWindow.showDialog();
+               count = count + 1;
+               if (okWindow.wasCanceled()) {
+                  runButton_.setSelected(false);
+                  runButton_.setText("Run FlatField");
+                  break;
+               }
+               acqs.add(RunAcquisition());
+
             }
 
-            @Override
-            public void run() {
-                int count = 1;
-                List<String> acqs = new ArrayList<String>();
-                while (true) {
-                    GenericDialog okWindow = new NonBlockingGenericDialog("FlatField Image " + Integer.toString(count));
-                    okWindow.setCancelLabel("Done");
-                    okWindow.addMessage("Move stage to new position and click OK to start acquisition.");
-                    okWindow.showDialog();
-                    count = count + 1;
-                    if (okWindow.wasCanceled()) {
-                        runButton_.setSelected(false);
-                        runButton_.setText("Run FlatField");
-                        break;
-                    }
-                    acqs.add(RunAcquisition());
-
-                }
-                //start with list of acqs, calculate median
-                if (acqs.isEmpty()) {
-                    return;
-                }
-                ImageStack flatFieldStack = null;
-                try {
-                    MMAcquisition mAcq = gui_.getAcquisition(acqs.get(0));
-                    flatFieldStack = new ImageStack(mAcq.getWidth(), 
-                            mAcq.getHeight(), mAcq.getSlices() );
-                    for (int slice = 0; slice < mAcq.getSlices(); slice++) {
-                       // make a stack to use to calculate the median of all our flatfield acquisitions
-                        ImageStack stack = new ImageStack(mAcq.getWidth(), mAcq.getHeight(), acqs.size());
-                        for (int xyPos = 0; xyPos < acqs.size(); xyPos++) {
-                            ImageProcessor proc = ImageUtils.makeProcessor(
-                                    gui_.getAcquisitionImageCache(acqs.get(xyPos)).getImage(0, slice, 0, 0));
-                            stack.setProcessor(proc, xyPos + 1);
-                        }
-                        //make median image from set of ImageProcessors
-                        ImagePlus iPlus = new ImagePlus("t", stack);
-                        ZProjector zProj = new ZProjector(iPlus);
-                        zProj.setMethod(ZProjector.MEDIAN_METHOD);
-                        zProj.doProjection();
-                        ImagePlus median = zProj.getProjection();
-                        
-                        // TODO: subtract background here
-                        
-                        // Normalize the median image so that the average is 1:
-                        ImageStatistics stats = median.getStatistics();
-                        float mean = (float) stats.mean;
-                        ImageProcessor iProc = median.getProcessor();
-                        for (int i = 0; i < iProc.getPixelCount(); i++) {
-                           iProc.setf(i, iProc.getf(i) / mean);
-                        }
-                        flatFieldStack.setProcessor(median.getProcessor(), slice + 1);
-                    }
-                } catch (MMScriptException ex) {
-                    ex.printStackTrace();
-                    ij.IJ.error("Something went wrong while calculating median image");
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                } finally {
-                     gui_.closeAllAcquisitions();
-                     // store the flatfield Stack
-                     if (flatFieldStack != null) {
-                        ImagePlus flatField = new ImagePlus("flatField", 
-                             flatFieldStack);
-                        flatField.show();
-                    }
-                    
-                }
+            //start with list of acqs, calculate median
+            if (acqs.isEmpty()) {
+               return;
             }
-        }
 
-        AcqThread acqT = new AcqThread("SAIM Acquisition");
-        acqT.start();
+            ImageStack flatFieldStack = null;
 
-    }
+            try {
+               MMAcquisition mAcq = gui_.getAcquisition(acqs.get(0));
+               flatFieldStack = new ImageStack(mAcq.getWidth(),
+                       mAcq.getHeight(), mAcq.getSlices());
+                                    // get the background image from file.
+               // this should be a single frame of the same dimensions as the acquisitions
+               ImagePlus background = null;
+               String backgroundFile = backgroundFileField_.getText();
+               if (backgroundFile != null && backgroundFile.length() > 0) {
+                  background = ij.IJ.openImage(backgroundFile);
+                  if (background.getWidth() != mAcq.getWidth()
+                          || background.getHeight() != mAcq.getHeight()
+                          || background.getBytesPerPixel() != mAcq.getByteDepth()) {
+                     ij.IJ.showMessage("Background file is of different size or type then the just acquired images.  Ignoring background");
+                     background = null;
+                  } else {
+                           // since our median image will be 32-bit, we need to convert
+                     // the backgroun image to 32-bit as well
+                     background.setProcessor(background.getProcessor().convertToFloatProcessor());
+                  }
+               }
+               for (int slice = 0; slice < mAcq.getSlices(); slice++) {
+                  
+                  // make a stack to use to calculate the median of all our flatfield acquisitions
+                  ImageStack stack = new ImageStack(mAcq.getWidth(), mAcq.getHeight(), acqs.size());
+                  for (int xyPos = 0; xyPos < acqs.size(); xyPos++) {
+                     ImageProcessor proc = ImageUtils.makeProcessor(
+                             gui_.getAcquisitionImageCache(acqs.get(xyPos)).getImage(0, slice, 0, 0));
+                     stack.setProcessor(proc, xyPos + 1);
+                  }
+                  
+                  //make median image from set of ImageProcessors
+                  ImagePlus iPlus = new ImagePlus("t", stack);
+                  ZProjector zProj = new ZProjector(iPlus);
+                  zProj.setMethod(ZProjector.MEDIAN_METHOD);
+                  zProj.doProjection();
+                  ImagePlus median = zProj.getProjection();
+
+                  // subtract background here
+                  if (background != null && background.getProcessor() != null) {
+                     ImageProcessor mf = median.getProcessor();
+                     for (int i = 0; i < mf.getPixelCount(); i++) {
+                        mf.setf(i, mf.getf(i) - background.getProcessor().getf(i));
+                     }
+                  }
+
+                  // Normalize the median image so that the average is 1:
+                  ImageStatistics stats = median.getStatistics();
+                  float mean = (float) stats.mean;
+                  ImageProcessor iProc = median.getProcessor();
+                  for (int i = 0; i < iProc.getPixelCount(); i++) {
+                     iProc.setf(i, iProc.getf(i) / mean);
+                  }
+                  flatFieldStack.setProcessor(median.getProcessor(), slice + 1);
+               }
+            } catch (MMScriptException ex) {
+               ex.printStackTrace();
+               ij.IJ.error("Something went wrong while calculating median image");
+            } catch (Exception ex) {
+               ex.printStackTrace();
+               ij.IJ.error("Something went wrong while calculating median image");
+            } finally {
+               gui_.closeAllAcquisitions();
+               
+               // show the flatfield Stack
+               if (flatFieldStack != null) {
+                  ImagePlus flatField = new ImagePlus("flatField",
+                          flatFieldStack);
+                  flatField.show();
+               }
+
+            }
+         }
+      }
+
+      AcqThread acqT = new AcqThread("SAIM Acquisition");
+      acqT.start();
+
+   }
 
     //function to add preferences values to each field that uses them
-
-    private void UpdateFromPrefs() {
-        angleStepSizeSpinner_.setValue(Double.parseDouble(prefs_.get(PrefStrings.ANGLESTEPSIZE, "")));
-        startAngleField_.setText(prefs_.get(PrefStrings.STARTANGLE, ""));
-        doubleZeroCheckBox_.setSelected(Boolean.parseBoolean(prefs_.get(PrefStrings.DOUBLEZERO, "")));
-        ffShowImagesCheckBox_.setSelected(Boolean.parseBoolean(prefs_.get(PrefStrings.FFSHOWIMAGES, "")));
-        coeff3Field_.setText(prefs_.get(PrefStrings.COEFF3, ""));
-        coeff2Field_.setText(prefs_.get(PrefStrings.COEFF2, ""));
-        coeff1Field_.setText(prefs_.get(PrefStrings.COEFF1, ""));
-        coeff0Field_.setText(prefs_.get(PrefStrings.COEFF0, ""));
-    }
+   private void UpdateFromPrefs() {
+      angleStepSizeSpinner_.setValue(Double.parseDouble(prefs_.get(PrefStrings.ANGLESTEPSIZE, "")));
+      startAngleField_.setText(prefs_.get(PrefStrings.STARTANGLE, ""));
+      doubleZeroCheckBox_.setSelected(Boolean.parseBoolean(prefs_.get(PrefStrings.DOUBLEZERO, "")));
+      ffShowImagesCheckBox_.setSelected(Boolean.parseBoolean(prefs_.get(PrefStrings.FFSHOWIMAGES, "")));
+      coeff3Field_.setText(prefs_.get(PrefStrings.COEFF3, ""));
+      coeff2Field_.setText(prefs_.get(PrefStrings.COEFF2, ""));
+      coeff1Field_.setText(prefs_.get(PrefStrings.COEFF1, ""));
+      coeff0Field_.setText(prefs_.get(PrefStrings.COEFF0, ""));
+   }
 }

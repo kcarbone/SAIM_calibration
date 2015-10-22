@@ -119,23 +119,6 @@ public class CalibrationPanel extends JPanel {
             tirfDeviceBox_.addItem(stagePorts.get(i));
         }
         tirfDeviceBox_.setSelectedItem(prefs_.get(PrefStrings.TIRFDEVICE, ""));
-        tirfDeviceBox_.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent evt) {
-                prefs_.put(PrefStrings.TIRFDEVICE, (String) tirfDeviceBox_.getSelectedItem());
-                try {
-                    StrVector deviceProps = core_.getDevicePropertyNames(prefs_.get(PrefStrings.TIRFDEVICE, ""));
-                    DefaultComboBoxModel model = (DefaultComboBoxModel) tirfPropBox_.getModel();
-                    model.removeAllElements();
-                    for (int i = 0; i < deviceProps.size(); i++) {
-                        model.addElement(deviceProps.get(i));
-                    }
-                } catch (Exception ex) {
-                    Logger.getLogger(CalibrationPanel.class.getName()).log(Level.SEVERE, null, ex);
-                }
-
-            }
-        });
         setupPanel.add(tirfDeviceBox_, "wrap");
 
         //Add TIRF motor position property name
@@ -143,14 +126,14 @@ public class CalibrationPanel extends JPanel {
         tirfPropBox_ = new JComboBox();
         tirfPropBox_.setMaximumSize(componentSize);
         tirfPropBox_.setMinimumSize(componentSize);
-        tirfPropBox_.setSelectedItem(prefs_.get(PrefStrings.TIRFPROP, ""));
-        tirfPropBox_.addActionListener(new ActionListener() {
+        setupPanel.add(tirfPropBox_, "wrap");
+        
+        tirfDeviceBox_.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent evt) {
-                prefs_.put(PrefStrings.TIRFPROP, (String) tirfPropBox_.getSelectedItem());
+               updateDeviceGUI();
             }
         });
-        setupPanel.add(tirfPropBox_, "wrap");
 
         // set zero motor position for calculating offset
         setupPanel.add(new JLabel("Set 0 Deg. Motor Position:"));
@@ -487,7 +470,8 @@ public class CalibrationPanel extends JPanel {
         zeroMotorPosField_.setText(prefs_.get(PrefStrings.ZEROMOTORPOS, ""));
         serialPortBox_.setSelectedItem(prefs_.get(PrefStrings.SERIALPORT, ""));
         tirfDeviceBox_.setSelectedItem(prefs_.get(PrefStrings.TIRFDEVICE, ""));
-        tirfPropBox_.setSelectedItem(prefs_.get(PrefStrings.TIRFPROP, ""));
+        updateDeviceGUI();
+        //tirfPropBox_.setSelectedItem(prefs_.get(PrefStrings.TIRFPROP, ""));
         sampleRIField_.setText(prefs_.get(PrefStrings.SAMPLERI, ""));
         immersionRIField_.setText(prefs_.get(PrefStrings.IMMERSIONRI, ""));
         startMotorPosField_.setText(prefs_.get(PrefStrings.STARTMOTORPOS, ""));
@@ -495,4 +479,41 @@ public class CalibrationPanel extends JPanel {
         numberOfCalibrationStepsSpinner_.setValue(Integer.parseInt(
                 prefs_.get(PrefStrings.NUMCALSTEPS, "1")));
     }
+    
+   /**
+    * Updates the device property dropdown box when the TIRF motor device dropdown
+    * changes
+    */     
+   private void updateDeviceGUI() {
+      prefs_.put(PrefStrings.TIRFDEVICE, (String) tirfDeviceBox_.getSelectedItem());
+      try {
+         StrVector deviceProps = core_.getDevicePropertyNames(prefs_.get(PrefStrings.TIRFDEVICE, ""));
+         DefaultComboBoxModel model = (DefaultComboBoxModel) tirfPropBox_.getModel();
+         if (model != null) {
+            model.removeAllElements();
+            for (int i = 0; i < deviceProps.size(); i++) {
+               model.addElement(deviceProps.get(i));
+            }
+            String propBoxItem = prefs_.get(PrefStrings.TIRFPROP, "");
+            tirfPropBox_.setSelectedItem(propBoxItem);
+            ActionListener[] als = tirfPropBox_.getActionListeners();
+            if (als.length == 0) {
+               tirfPropBox_.addActionListener(new ActionListener() {
+                  @Override
+                  public void actionPerformed(ActionEvent evt) {
+                     Object selectedItem = tirfPropBox_.getSelectedItem();
+                     if (selectedItem != null) {
+                        prefs_.put(PrefStrings.TIRFPROP, (String) selectedItem);
+                     }
+
+                  }
+               });
+            }
+         }
+      } catch (Exception ex) {
+         Logger.getLogger(CalibrationPanel.class.getName()).log(Level.SEVERE, null, ex);
+      }
+
+   }
+
 }
