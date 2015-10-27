@@ -272,7 +272,7 @@ public class CalibrationPanel extends JPanel {
      *
      */
     private void RunOffsetCalc() {
-        final double zeroPos = Double.parseDouble(PrefStrings.ZEROMOTORPOS);
+        final double zeroPos = Double.parseDouble(prefs_.get(PrefStrings.ZEROMOTORPOS, "0.0"));
         try {
             core_.setShutterOpen(true);
             Point2D.Double offsetVal = takeSnapshot(zeroPos, "Offset Scan");
@@ -339,13 +339,21 @@ public class CalibrationPanel extends JPanel {
             toPlot[1] = dect2readings;
             boolean[] showShapes = {true, true, false, false};
 
-            //Fit result to a gaussian
-            double[] result1 = Fitter.fit(dect1readingsFlip, Fitter.FunctionType.Gaussian, null);
-            toPlot[2] = Fitter.getFittedSeries(dect1readingsFlip, Fitter.FunctionType.Gaussian, result1);
-            ij.IJ.log("Dectector 1 Mean: " + result1[1] + "\n");
-            double[] result2 = Fitter.fit(dect2readings, Fitter.FunctionType.Gaussian, null);
-            toPlot[3] = Fitter.getFittedSeries(dect2readings, Fitter.FunctionType.Gaussian, result2);
-            ij.IJ.log("Dectector 2 Mean: " + result2[1] + "\n");
+           //Fit result to a gaussian
+           double[] result1 = new double[4];
+           double[] result2 = new double[4];
+           toPlot[2] = new XYSeries(1536);
+           toPlot[3] = new XYSeries(1536);
+           try {
+              result1 = Fitter.fit(dect1readingsFlip, Fitter.FunctionType.Gaussian, null);
+              toPlot[2] = Fitter.getFittedSeries(dect1readingsFlip, Fitter.FunctionType.Gaussian, result1);
+              ij.IJ.log("Dectector 1 Mean: " + result1[1] + "\n");
+              result2 = Fitter.fit(dect2readings, Fitter.FunctionType.Gaussian, null);
+              toPlot[3] = Fitter.getFittedSeries(dect2readings, Fitter.FunctionType.Gaussian, result2);
+              ij.IJ.log("Dectector 2 Mean: " + result2[1] + "\n");
+           } catch (Exception ex) {
+              ij.IJ.log("Fit failed");
+           }
 
             //Plot detector readings and gaussian fits
             myPlotter.plotDataN(plotTitle, toPlot, "Pixel", "Intensity", showShapes, "Pos: " + pos);
@@ -378,7 +386,7 @@ public class CalibrationPanel extends JPanel {
                double startPosition;
                String tmpString = "";
                try {
-                  tmpString = prefs_.get(PrefStrings.ZEROMOTORPOS, "0.0");
+                  tmpString = prefs_.get(PrefStrings.STARTMOTORPOS, "0.0");
                   startPosition = Double.parseDouble(tmpString);
                } catch (NumberFormatException nfe) {
                   ij.IJ.error("Failed to parse Start Motor Position \"" + tmpString +
@@ -416,7 +424,7 @@ public class CalibrationPanel extends JPanel {
                             pos = pos + angleStepSize;
                         }
                     }
-                    //R ead offset if calculated
+                    //Read offset if calculated
                     Double detectorOffset;
                     if ((offsetLabel_.getText()) != null) {
                         detectorOffset = Double.parseDouble(offsetLabel_.getText());
@@ -437,8 +445,8 @@ public class CalibrationPanel extends JPanel {
                         //Snells law correction angle of laser light for refractive index 
                         //Refractive indeces: acrylic = 1.49, water = 1.33, user input = RI
                         //determine true angle coming out of objective (correct for acrylic)
-                        double immersionRI = Double.parseDouble(PrefStrings.IMMERSIONRI);
-                        double sampleRI = Double.parseDouble(PrefStrings.SAMPLERI);
+                        double immersionRI = Double.parseDouble(prefs_.get(PrefStrings.IMMERSIONRI, "1.33"));
+                        double sampleRI = Double.parseDouble(prefs_.get(PrefStrings.SAMPLERI, "1.33"));
                         Double firstCorrect = snellIt(observedAngle, 1.49, immersionRI);
                         //determine true angle hitting the sample (correct for water/buffer)
                         Double trueAngle = snellIt(firstCorrect, immersionRI, sampleRI);
@@ -452,11 +460,11 @@ public class CalibrationPanel extends JPanel {
                     toPlot[1] = Fitter.getFittedSeries(toPlot[0], Fitter.FunctionType.Pol3, calCurve);
                     boolean[] showShapes = {true, false};
                     myPlotter2.plotDataN("Calibration Curve", toPlot, "True Angle", "Position", showShapes, "");
-                    String coeff3 = new DecimalFormat("0.##E0").format(calCurve[3]);
+                    String coeff3 = new DecimalFormat("0.###E0").format(calCurve[3]);
                     prefs_.put(PrefStrings.COEFF3, coeff3);
-                    String coeff2 = new DecimalFormat("0.##E0").format(calCurve[2]);
+                    String coeff2 = new DecimalFormat("0.###E0").format(calCurve[2]);
                     prefs_.put(PrefStrings.COEFF2, coeff2);
-                    String coeff1 = new DecimalFormat("0.##E0").format(calCurve[1]);
+                    String coeff1 = new DecimalFormat("0.###E0").format(calCurve[1]);
                     prefs_.put(PrefStrings.COEFF1, coeff1);
                     String offset = new DecimalFormat("#.##").format(calCurve[0]);
                     prefs_.put(PrefStrings.COEFF0, offset);
@@ -489,7 +497,7 @@ public class CalibrationPanel extends JPanel {
 
     //function to update panel with stored preferences values
     public final void UpdateGUIFromPrefs() {
-        zeroMotorPosField_.setText(prefs_.get(PrefStrings.ZEROMOTORPOS, ""));
+        zeroMotorPosField_.setText(prefs_.get(PrefStrings.ZEROMOTORPOS, "0.0"));
         serialPortBox_.setSelectedItem(prefs_.get(PrefStrings.SERIALPORT, ""));
         tirfDeviceBox_.setSelectedItem(prefs_.get(PrefStrings.TIRFDEVICE, ""));
         updateDeviceGUI();
@@ -512,6 +520,9 @@ public class CalibrationPanel extends JPanel {
          StrVector deviceProps = core_.getDevicePropertyNames(prefs_.get(PrefStrings.TIRFDEVICE, ""));
          DefaultComboBoxModel model = (DefaultComboBoxModel) tirfPropBox_.getModel();
          if (model != null) {
+            for (ActionListener al : tirfPropBox_.getActionListeners()) {
+             tirfPropBox_.removeActionListener(al);
+            }
             model.removeAllElements();
             for (int i = 0; i < deviceProps.size(); i++) {
                model.addElement(deviceProps.get(i));
