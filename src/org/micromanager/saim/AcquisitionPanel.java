@@ -23,8 +23,6 @@ import java.awt.Dimension;
 import java.awt.dnd.DropTarget;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
 import java.io.File;
 import java.util.prefs.Preferences;
 import javax.swing.JButton;
@@ -88,6 +86,14 @@ public class AcquisitionPanel extends JPanel {
       setupPanel.setBorder(GuiUtils.makeTitledBorder("Setup"));
       final Dimension componentSize = new Dimension(150, 30);
 
+
+      // set start angle
+      setupPanel.add(new JLabel("Start Angle:"));
+      startAngleField_ = new JTextField("");
+      setTextAttributes(startAngleField_, componentSize);
+      GuiUtils.tieTextFieldToPrefs(prefs, startAngleField_, PrefStrings.STARTANGLE);
+      setupPanel.add(startAngleField_, "span, growx, wrap");
+      
       // set angle step size
       setupPanel.add(new JLabel("Angle Step Size (degrees):"));
       angleStepSizeSpinner_ = new JSpinner(new SpinnerNumberModel(
@@ -99,18 +105,7 @@ public class AcquisitionPanel extends JPanel {
          }
       });
       setupPanel.add(angleStepSizeSpinner_, "span, growx, wrap");
-
-      // set start angle
-      setupPanel.add(new JLabel("Start Angle:"));
-      startAngleField_ = new JTextField("");
-      setTextAttributes(startAngleField_, componentSize);
-      startAngleField_.addActionListener(new ActionListener() {
-         @Override
-         public void actionPerformed(ActionEvent e) {
-            prefs_.put(PrefStrings.STARTANGLE, startAngleField_.getText());
-         }
-      });
-      setupPanel.add(startAngleField_, "span, growx, wrap");
+      
       setupPanel.add(new JLabel("Start angle must be divisible by angle step size."), "span 2, wrap");
 
       // set double zero position
@@ -131,98 +126,40 @@ public class AcquisitionPanel extends JPanel {
       calPanel_ = new JPanel(new MigLayout(
               "", ""));
       calPanel_.setBorder(GuiUtils.makeTitledBorder("Calibration Values"));
-      final Dimension calBoxSize = new Dimension(130, 30);
 
       //Set calibration values
       //x3 coefficient
       calPanel_.add(new JLabel("<html>x<sup>3</sup>: </html>"));
       coeff3Field_ = new JTextField("");
       setTextAttributes(coeff3Field_, componentSize);
-      coeff3Field_.addKeyListener(new KeyListener() {
-
-         @Override
-         public void keyTyped(KeyEvent ke) {
-         }
-
-         @Override
-         public void keyPressed(KeyEvent ke) {
-         }
-
-         @Override
-         public void keyReleased(KeyEvent ke) {
-            prefs_.put(PrefStrings.COEFF3, coeff3Field_.getText());
-         }
-      });
+      GuiUtils.tieTextFieldToPrefs(prefs, coeff3Field_, PrefStrings.COEFF3);
       calPanel_.add(coeff3Field_, "span, center, wrap");
 
       //x2 coefficient
       calPanel_.add(new JLabel("<html>x<sup>2</sup>: </html>"));
       coeff2Field_ = new JTextField("");
       setTextAttributes(coeff2Field_, componentSize);
-      coeff2Field_.addKeyListener(new KeyListener() {
-
-         @Override
-         public void keyTyped(KeyEvent ke) {
-         }
-
-         @Override
-         public void keyPressed(KeyEvent ke) {
-         }
-
-         @Override
-         public void keyReleased(KeyEvent ke) {
-            prefs_.put(PrefStrings.COEFF2, coeff2Field_.getText());
-         }
-      });
+      GuiUtils.tieTextFieldToPrefs(prefs, coeff2Field_, PrefStrings.COEFF2);
       calPanel_.add(coeff2Field_, "span, center, wrap");
 
       //x coefficient
       calPanel_.add(new JLabel("x: "));
       coeff1Field_ = new JTextField("");
       setTextAttributes(coeff1Field_, componentSize);
-      coeff1Field_.addKeyListener(new KeyListener() {
-
-         @Override
-         public void keyTyped(KeyEvent ke) {
-         }
-
-         @Override
-         public void keyPressed(KeyEvent ke) {
-         }
-
-         @Override
-         public void keyReleased(KeyEvent ke) {
-            prefs_.put(PrefStrings.COEFF1, coeff1Field_.getText());
-         }
-      });
+      GuiUtils.tieTextFieldToPrefs(prefs, coeff1Field_, PrefStrings.COEFF1);
       calPanel_.add(coeff1Field_, "span, center, wrap");
 
       //x0 constant
       calPanel_.add(new JLabel("<html>x<sup>0</sup>: </html>"));
       coeff0Field_ = new JTextField("");
       setTextAttributes(coeff0Field_, componentSize);
-      coeff0Field_.addKeyListener(new KeyListener() {
-
-         @Override
-         public void keyTyped(KeyEvent ke) {
-         }
-
-         @Override
-         public void keyPressed(KeyEvent ke) {
-         }
-
-         @Override
-         public void keyReleased(KeyEvent ke) {
-            prefs_.put(PrefStrings.COEFF0, coeff3Field_.getText());
-         }
-      });
+      GuiUtils.tieTextFieldToPrefs(prefs, coeff0Field_, PrefStrings.COEFF0);
       calPanel_.add(coeff0Field_, "span, center, wrap");
 
       // Acquire Panel
       JPanel acquirePanel = new JPanel(new MigLayout(
               "", ""));
       acquirePanel.setBorder(GuiUtils.makeTitledBorder("Acquire"));
-      final Dimension acqBoxSize = new Dimension(130, 30);
 
       // set directory root file chooser
       acqdirRootChooser_ = new JFileChooser("");
@@ -294,7 +231,7 @@ public class AcquisitionPanel extends JPanel {
             // TODO add your handling code here:
             if (runButton_.isSelected()) {
                runButton_.setText("Abort Acquisition");
-               RunAcquisition();
+               runAcquisition();
             } else {
                runButton_.setText("Run Acquisition");
             }
@@ -306,7 +243,7 @@ public class AcquisitionPanel extends JPanel {
       add(setupPanel, "span, growx, wrap");
       add(calPanel_, "span, growx, wrap");
       add(acquirePanel, "span, growx, wrap");
-      UpdateGUIFromPrefs();
+      updateGUIFromPrefs();
 
    }
 
@@ -327,7 +264,6 @@ public class AcquisitionPanel extends JPanel {
               MMStudio.MM_DATA_SET);
       if (result != null) {
          acqdirRootField_.setText(result.getAbsolutePath());
-         //acqEng_.setRootName(result.getAbsolutePath());
       }
    }
 
@@ -336,7 +272,7 @@ public class AcquisitionPanel extends JPanel {
     * function will acquire images at angle positions defined by calibration.
     *
     */
-   private void RunAcquisition() {
+   private void runAcquisition() {
       class AcqThread extends Thread {
 
          AcqThread(String threadName) {
@@ -385,7 +321,7 @@ public class AcquisitionPanel extends JPanel {
                   for (int a = 0;
                           a <= nrAngles1;
                           a++) {
-                     double val = tirfPosFromAngle(pos);
+                     double val = SAIMCommon.tirfPosFromAngle(prefs_, pos);
                      gui_.message("Image: " + Integer.toString(a) + ", angle: " + Double.toString(pos) + ", val: " + Double.toString(val));
                      core_.setProperty(deviceName, propName, val);
                      core_.waitForDevice(deviceName);
@@ -409,7 +345,7 @@ public class AcquisitionPanel extends JPanel {
                   for (int b = 0;
                           b <= nrAngles2;
                           b++) {
-                     double val = tirfPosFromAngle(pos1);
+                     double val = SAIMCommon.tirfPosFromAngle(prefs_, pos1);
                      gui_.message("Image: " + Integer.toString(b) + ", angle: " + Double.toString(pos1) + ", val: " + Double.toString(val));
                      core_.setProperty(deviceName, propName, val);
                      core_.waitForDevice(deviceName);
@@ -441,21 +377,9 @@ public class AcquisitionPanel extends JPanel {
       acqT.start();
 
    }
-
-   private int tirfPosFromAngle(double angle) {
-      // TirfPosition = slope * angle plus Offset
-      // Output motor position must be an integer to be interpreted by TITIRF
-
-      double tempPos = (Double.parseDouble(coeff3Field_.getText()) * Math.pow(angle, 3)
-              + Double.parseDouble(coeff2Field_.getText()) * Math.pow(angle, 2)
-              + Double.parseDouble(coeff1Field_.getText()) * angle
-              + Double.parseDouble(coeff0Field_.getText()));
-      int pos = Math.round((float) tempPos);
-      return pos;
-   }
    
    //function to add preferences values to each field that uses them
-   public final void UpdateGUIFromPrefs() {
+   public final void updateGUIFromPrefs() {
         angleStepSizeSpinner_.setValue(Double.parseDouble(prefs_.get(PrefStrings.ANGLESTEPSIZE, "0.0")));
         startAngleField_.setText(prefs_.get(PrefStrings.STARTANGLE, ""));
         doubleZeroCheckBox_.setSelected(Boolean.parseBoolean(prefs_.get(PrefStrings.DOUBLEZERO, "")));

@@ -142,7 +142,7 @@ public class CalibrationPanel extends JPanel {
         setupPanel.add(new JLabel("Set 0 Deg. Motor Position:"));
         zeroMotorPosField_ = new JTextField("0");
         setTextAttributes(zeroMotorPosField_, componentSize);
-        tieTextFieldToPrefs(zeroMotorPosField_, PrefStrings.ZEROMOTORPOS);
+        GuiUtils.tieTextFieldToPrefs(prefs_, zeroMotorPosField_, PrefStrings.ZEROMOTORPOS);
         setupPanel.add(zeroMotorPosField_, "span, growx, wrap");
 
         // calculate offset button
@@ -169,27 +169,27 @@ public class CalibrationPanel extends JPanel {
         calibratePanel.add(new JLabel("Refractive Index of Sample:"));
         sampleRIField_ = new JTextField("0");
         setTextAttributes(sampleRIField_, calBoxSize);
-        tieTextFieldToPrefs(sampleRIField_, PrefStrings.SAMPLERI);
+        GuiUtils.tieTextFieldToPrefs(prefs_, sampleRIField_, PrefStrings.SAMPLERI);
         calibratePanel.add(sampleRIField_, "span, growx, wrap");
 
         // immersion RI
         calibratePanel.add(new JLabel("Refractive Index of Immersion Medium:"));
         immersionRIField_ = new JTextField("0");
         setTextAttributes(immersionRIField_, calBoxSize);        
-        tieTextFieldToPrefs(immersionRIField_, PrefStrings.IMMERSIONRI);
+        GuiUtils.tieTextFieldToPrefs(prefs_, immersionRIField_, PrefStrings.IMMERSIONRI);
         calibratePanel.add(immersionRIField_, "span, growx, wrap");
 
         // start motor position
         calibratePanel.add(new JLabel("Start Motor Position:"));
         startMotorPosField_ = new JTextField("0");
         setTextAttributes(startMotorPosField_, calBoxSize);
-        tieTextFieldToPrefs(startMotorPosField_, PrefStrings.STARTMOTORPOS);
+        GuiUtils.tieTextFieldToPrefs(prefs_, startMotorPosField_, PrefStrings.STARTMOTORPOS);
         calibratePanel.add(startMotorPosField_, "span, growx, wrap");
 
         calibratePanel.add(new JLabel("End Motor Position:"));
         endMotorPosField_ = new JTextField("0");
         setTextAttributes(endMotorPosField_, calBoxSize);
-        tieTextFieldToPrefs(endMotorPosField_, PrefStrings.ENDMOTORPOS);
+        GuiUtils.tieTextFieldToPrefs(prefs_, endMotorPosField_, PrefStrings.ENDMOTORPOS);
         calibratePanel.add(endMotorPosField_, "span, growx, wrap");
 
         calibratePanel.add(new JLabel("Number of Calibration Steps"));
@@ -239,31 +239,7 @@ public class CalibrationPanel extends JPanel {
         jtf.setMinimumSize(size);
     }
     
-    /**
-     * Utility function to tie a document listener to a textfield so that all
-     * changes in the textfield are immediately stored in the preferences
-     * @param textComponent
-     * @param prefKey 
-     */
-    private void tieTextFieldToPrefs(final JTextComponent textComponent, final String prefKey){
-      textComponent.getDocument().addDocumentListener(new DocumentListener() {
 
-           @Override
-           public void insertUpdate(DocumentEvent e) {
-              prefs_.put(prefKey, textComponent.getText()); 
-           }
-
-           @Override
-           public void removeUpdate(DocumentEvent e) {
-              prefs_.put(prefKey, textComponent.getText());  
-           }
-
-           @Override
-           public void changedUpdate(DocumentEvent e) {
-              prefs_.put(prefKey, textComponent.getText());  
-           }
-        });
-    }
 
     /**
      * User is supposed to direct the laser beam so that it goes straight up

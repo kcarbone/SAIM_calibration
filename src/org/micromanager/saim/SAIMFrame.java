@@ -82,10 +82,10 @@ public class SAIMFrame extends MMFrame {
                calPanel.UpdateGUIFromPrefs();
             }
             if (tabbedPane_.getSelectedIndex() == 1) {
-               ffPanel.UpdateGUIFromPrefs();
+               ffPanel.updateGUIFromPrefs();
             }
             if (tabbedPane_.getSelectedIndex() == 2) {
-              acqPanel.UpdateGUIFromPrefs();
+              acqPanel.updateGUIFromPrefs();
             }
          }
       });
