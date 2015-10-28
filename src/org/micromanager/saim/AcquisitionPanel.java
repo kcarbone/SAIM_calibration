@@ -184,7 +184,7 @@ public class AcquisitionPanel extends JPanel {
          }
       });
       DropTarget dt = new DropTarget(acqdirRootField_,
-              new DragFileToTextField(acqdirRootField_, true));
+              new DragFileToTextField(acqdirRootField_, true, prefs, PrefStrings.ACQDIRROOT));
       acquirePanel.add(acqdirRootField_);
 
       //set directory chooser button

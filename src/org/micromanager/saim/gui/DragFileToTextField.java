@@ -36,6 +36,7 @@ import java.awt.dnd.DropTargetEvent;
 import java.awt.dnd.DropTargetListener;
 import java.io.File;
 import java.io.IOException;
+import java.util.prefs.Preferences;
 import javax.swing.text.JTextComponent;
 
 /**
@@ -45,10 +46,16 @@ import javax.swing.text.JTextComponent;
 public class DragFileToTextField implements DropTargetListener {
    final JTextComponent theTextField_;
    final boolean dirOnly_;
+   final Preferences prefs_;
+   final String prefKey_;
    
-   public DragFileToTextField(JTextComponent theTextField, boolean dirOnly) {
+   public DragFileToTextField(JTextComponent theTextField, boolean dirOnly,
+           Preferences prefs, String prefKey) {
       theTextField_ = theTextField;
       dirOnly_ = dirOnly;
+      prefs_ = prefs;
+      prefKey_ = prefKey;
+      
    }
    
    @Override
@@ -88,6 +95,7 @@ public class DragFileToTextField implements DropTargetListener {
                   if ( (f.isFile() && dirOnly_) || (f.isDirectory() && !dirOnly_) ) {
                      theTextField_.setText(f.getParent());
                   }
+                  prefs_.put(prefKey_, theTextField_.getText());
                   dtde.dropComplete(true);
                   return;
                }

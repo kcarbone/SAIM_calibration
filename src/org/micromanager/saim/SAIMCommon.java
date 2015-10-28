@@ -23,7 +23,7 @@ public class SAIMCommon {
       return pos;
    }
 
-   public static String RunAcquisition(final ScriptInterface gui,
+   public static String runAcquisition(final ScriptInterface gui,
            final Preferences prefs, String rootDir, boolean show, boolean save) 
            throws Exception {
       
@@ -34,6 +34,7 @@ public class SAIMCommon {
       if (startAngle % angleStepSize != 0) {
          throw new Exception("Start angle is not divisible by the angle step size");
       }
+      
       // Set these variables to the correct values and leave
       final String deviceName = prefs.get(PrefStrings.TIRFDEVICE, "");
       final String propName = prefs.get(PrefStrings.TIRFPROP, "");

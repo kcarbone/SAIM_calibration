@@ -48,7 +48,6 @@ import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import mmcorej.CMMCore;
-import mmcorej.TaggedImage;
 import net.miginfocom.swing.MigLayout;
 import org.micromanager.api.ScriptInterface;
 import org.micromanager.saim.gui.GuiUtils;
@@ -136,7 +135,6 @@ public class FlatFieldPanel extends JPanel {
         calPanel_ = new JPanel(new MigLayout(
                 "", ""));
         calPanel_.setBorder(GuiUtils.makeTitledBorder("Calibration Values"));
-        final Dimension calBoxSize = new Dimension(130, 30);
 
         //Set calibration values
         //x3 coefficient
@@ -180,16 +178,16 @@ public class FlatFieldPanel extends JPanel {
         backgroundFileChooser_.setTitle("Background Image");
         
         flatfieldPanel.add(new JLabel("Background Image"));
-        backgroundFileField_ = new JTextField("");
+        backgroundFileField_ = new JTextField(prefs_.get(PrefStrings.FFBACKGROUNDFILE, ""));
         setTextAttributes(backgroundFileField_, componentSize);
         backgroundFileField_.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                prefs_.put(PrefStrings.FFDIRROOT, backgroundFileField_.getText());
+                prefs_.put(PrefStrings.FFBACKGROUNDFILE, backgroundFileField_.getText());
             }
         });
         DropTarget dt = new DropTarget (backgroundFileField_, 
-                new DragFileToTextField(backgroundFileField_, false));
+                new DragFileToTextField(backgroundFileField_, false, prefs, PrefStrings.FFBACKGROUNDFILE));
         flatfieldPanel.add(backgroundFileField_);
 
         // background file chooser button
@@ -202,7 +200,7 @@ public class FlatFieldPanel extends JPanel {
                String directory = backgroundFileChooser_.getDirectory();
                if (file != null && directory != null)
                   backgroundFileField_.setText(directory + File.separator + file);
-                  prefs_.put(PrefStrings.FFDIRROOT, backgroundFileField_.getText());
+                  prefs_.put(PrefStrings.FFBACKGROUNDFILE, backgroundFileField_.getText());
             }
         });
         flatfieldPanel.add(backgroundFileButton_, "wrap");
@@ -270,7 +268,12 @@ public class FlatFieldPanel extends JPanel {
      * calibration.
      *
      */
-    private String runAcquisition() {
+   private String runAcquisition() throws Exception{
+      return SAIMCommon.runAcquisition(gui_, prefs_, "",
+                 ffShowImagesCheckBox_.isSelected(), false);
+   }
+       /*
+       
         double startAngle = Double.parseDouble(startAngleField_.getText());
         double angleStepSize = prefs_.getDouble(PrefStrings.ANGLESTEPSIZE, 0);
         String acq = "";
@@ -362,7 +365,7 @@ public class FlatFieldPanel extends JPanel {
         }
         return acq;
     }
-
+*/
     /**
      * User is supposed to set up the acquisition in the micromanager panel.
      * This function will prompt the user to move the stage to 5 positions and
@@ -392,12 +395,27 @@ public class FlatFieldPanel extends JPanel {
                   runButton_.setText("Run FlatField");
                   break;
                }
-               acqs.add(runAcquisition());
+               try {
+                  acqs.add(SAIMCommon.runAcquisition(gui_, prefs_, "",
+                              ffShowImagesCheckBox_.isSelected(), false));
+               } catch (Exception ex) {
+                  ij.IJ.log(ex.getMessage());
+                  if (ex.getMessage().equals("Start angle is not divisible by the angle step size")) {
+                     ij.IJ.error(ex.getMessage());
+                  } else {
+                     ij.IJ.error("Something went wrong.  Aborting!");
+                  }
+                  runButton_.setSelected(false);
+                  runButton_.setText("Run FlatField");
+                  return;
+               }
 
             }
 
             //start with list of acqs, calculate median
             if (acqs.isEmpty()) {
+               runButton_.setSelected(false);
+               runButton_.setText("Run FlatField");
                return;
             }
 
@@ -473,7 +491,8 @@ public class FlatFieldPanel extends JPanel {
                           flatFieldStack);
                   flatField.show();
                }
-
+               runButton_.setSelected(false);
+               runButton_.setText("Run FlatField");
             }
          }
       }
@@ -483,7 +502,7 @@ public class FlatFieldPanel extends JPanel {
 
    }
 
-    //function to add preferences values to each field that uses them
+    // function to add preferences values to each field that uses them
    public final void updateGUIFromPrefs() {
       angleStepSizeSpinner_.setValue(Double.parseDouble(prefs_.get(PrefStrings.ANGLESTEPSIZE, "")));
       startAngleField_.setText(prefs_.get(PrefStrings.STARTANGLE, ""));
