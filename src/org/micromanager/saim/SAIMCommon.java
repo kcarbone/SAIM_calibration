@@ -11,6 +11,12 @@ import org.micromanager.api.ScriptInterface;
  */
 public class SAIMCommon {
 
+   /**
+    * Utility to convert angle to tirf positions using our polynomial equation
+    * @param prefs - Java prefs used to store our coefficients
+    * @param angle Desired angle
+    * @return Tirf motor position
+    */
    public static int tirfPosFromAngle(Preferences prefs, double angle) {
       // TirfPosition = slope * angle plus Offset
       // Output motor position must be an integer to be interpreted by TITIRF
@@ -23,6 +29,16 @@ public class SAIMCommon {
       return pos;
    }
 
+   /**
+    * 
+    * @param gui
+    * @param prefs
+    * @param rootDir
+    * @param show
+    * @param save
+    * @return
+    * @throws Exception 
+    */
    public static String runAcquisition(final ScriptInterface gui,
            final Preferences prefs, String rootDir, boolean show, boolean save) 
            throws Exception {

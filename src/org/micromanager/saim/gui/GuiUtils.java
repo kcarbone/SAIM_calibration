@@ -2,8 +2,10 @@
 package org.micromanager.saim.gui;
 
 import java.awt.Color;
+import java.awt.Dimension;
 import java.util.prefs.Preferences;
 import javax.swing.BorderFactory;
+import javax.swing.JTextField;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -54,5 +56,17 @@ public class GuiUtils {
            }
         });
     }
-   
+    
+    /**
+     * Utility function to set attributes for JTextFields in the dialog
+     *
+     * @param jtf JTextField whose attributes will be set
+     * @param size Desired minimum size
+     */
+    public static void setTextAttributes(JTextField jtf, Dimension size) {
+        jtf.setHorizontalAlignment(JTextField.RIGHT);
+        jtf.setMinimumSize(size);
+        jtf.setMaximumSize(size);
+    }
+    
 }

@@ -90,7 +90,7 @@ public class AcquisitionPanel extends JPanel {
       // set start angle
       setupPanel.add(new JLabel("Start Angle:"));
       startAngleField_ = new JTextField("");
-      setTextAttributes(startAngleField_, componentSize);
+      GuiUtils.setTextAttributes(startAngleField_, componentSize);
       GuiUtils.tieTextFieldToPrefs(prefs, startAngleField_, PrefStrings.STARTANGLE);
       setupPanel.add(startAngleField_, "span, growx, wrap");
       
@@ -131,28 +131,28 @@ public class AcquisitionPanel extends JPanel {
       //x3 coefficient
       calPanel_.add(new JLabel("<html>x<sup>3</sup>: </html>"));
       coeff3Field_ = new JTextField("");
-      setTextAttributes(coeff3Field_, componentSize);
+      GuiUtils.setTextAttributes(coeff3Field_, componentSize);
       GuiUtils.tieTextFieldToPrefs(prefs, coeff3Field_, PrefStrings.COEFF3);
       calPanel_.add(coeff3Field_, "span, center, wrap");
 
       //x2 coefficient
       calPanel_.add(new JLabel("<html>x<sup>2</sup>: </html>"));
       coeff2Field_ = new JTextField("");
-      setTextAttributes(coeff2Field_, componentSize);
+      GuiUtils.setTextAttributes(coeff2Field_, componentSize);
       GuiUtils.tieTextFieldToPrefs(prefs, coeff2Field_, PrefStrings.COEFF2);
       calPanel_.add(coeff2Field_, "span, center, wrap");
 
       //x coefficient
       calPanel_.add(new JLabel("x: "));
       coeff1Field_ = new JTextField("");
-      setTextAttributes(coeff1Field_, componentSize);
+      GuiUtils.setTextAttributes(coeff1Field_, componentSize);
       GuiUtils.tieTextFieldToPrefs(prefs, coeff1Field_, PrefStrings.COEFF1);
       calPanel_.add(coeff1Field_, "span, center, wrap");
 
       //x0 constant
       calPanel_.add(new JLabel("<html>x<sup>0</sup>: </html>"));
       coeff0Field_ = new JTextField("");
-      setTextAttributes(coeff0Field_, componentSize);
+      GuiUtils.setTextAttributes(coeff0Field_, componentSize);
       GuiUtils.tieTextFieldToPrefs(prefs, coeff0Field_, PrefStrings.COEFF0);
       calPanel_.add(coeff0Field_, "span, center, wrap");
 
@@ -176,7 +176,7 @@ public class AcquisitionPanel extends JPanel {
       // set directory root text field
       acquirePanel.add(new JLabel("Directory Root:"));
       acqdirRootField_ = new JTextField("");
-      setTextAttributes(acqdirRootField_, componentSize);
+      GuiUtils.setTextAttributes(acqdirRootField_, componentSize);
       acqdirRootField_.addActionListener(new ActionListener() {
          @Override
          public void actionPerformed(ActionEvent e) {
@@ -200,7 +200,7 @@ public class AcquisitionPanel extends JPanel {
       // set name prefix
       acquirePanel.add(new JLabel("Name Prefix:"));
       acqnamePrefixField_ = new JTextField("");
-      setTextAttributes(acqnamePrefixField_, componentSize);
+      GuiUtils.setTextAttributes(acqnamePrefixField_, componentSize);
       acqnamePrefixField_.addActionListener(new ActionListener() {
          @Override
          public void actionPerformed(ActionEvent e) {
@@ -245,17 +245,6 @@ public class AcquisitionPanel extends JPanel {
       add(acquirePanel, "span, growx, wrap");
       updateGUIFromPrefs();
 
-   }
-
-   /**
-    * Utility function to set attributes for JTextFields in the dialog
-    *
-    * @param jtf JTextField whose attributes will be set
-    * @param size Desired minimum size
-    */
-   private void setTextAttributes(JTextField jtf, Dimension size) {
-      jtf.setHorizontalAlignment(JTextField.RIGHT);
-      jtf.setMinimumSize(size);
    }
 
    protected void setRootDirectory() {
