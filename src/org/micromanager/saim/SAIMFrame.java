@@ -79,13 +79,13 @@ public class SAIMFrame extends MMFrame {
          public void stateChanged(ChangeEvent e) {
             // not very elegant.  Would be nice to make an interface for the Panels...
             if (tabbedPane_.getSelectedIndex() == 0) {
-               calPanel.UpdateGUIFromPrefs();
+               calPanel.updateGUIFromPrefs();
             }
             if (tabbedPane_.getSelectedIndex() == 1) {
-               ffPanel.UpdateGUIFromPrefs();
+               ffPanel.updateGUIFromPrefs();
             }
             if (tabbedPane_.getSelectedIndex() == 2) {
-              acqPanel.UpdateGUIFromPrefs();
+              acqPanel.updateGUIFromPrefs();
             }
          }
       });
