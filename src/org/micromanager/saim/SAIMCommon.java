@@ -30,12 +30,14 @@ public class SAIMCommon {
    }
 
    /**
+    * This code runs the actual acquisition while flatfielding and when executing
+    * an acquisition.  
     * 
-    * @param gui
-    * @param prefs
-    * @param rootDir
-    * @param show
-    * @param save
+    * @param gui MMScriptInterface
+    * @param prefs Java Preferences used to store all our data
+    * @param rootDir where to save this acquisition (if desired)
+    * @param show whether or not to show this acquisition
+    * @param save whether or not to sava this acquisition
     * @return
     * @throws Exception 
     */
@@ -45,6 +47,9 @@ public class SAIMCommon {
       
       CMMCore core = gui.getMMCore();
       double startAngle = Double.parseDouble(prefs.get(PrefStrings.STARTANGLE, "0.0"));
+      if (startAngle > 0) {
+         throw new Exception ("Start angle should be <= 0");
+      }
       double angleStepSize = prefs.getDouble(PrefStrings.ANGLESTEPSIZE, 0);
       boolean doubleZero = Boolean.parseBoolean(prefs.get(PrefStrings.DOUBLEZERO, ""));
       if (startAngle % angleStepSize != 0) {
@@ -62,58 +67,32 @@ public class SAIMCommon {
       //gui_.closeAllAcquisitions();
       String acq = gui.getUniqueAcquisitionName("FlatField");
 
-      int frames = nrAngles + 1;
+      int nrFrames = nrAngles + 1;
       if (doubleZero) {
-         frames = nrAngles + 2;
+         nrFrames = nrAngles + 2;
       }
 
-      gui.openAcquisition(acq,
-              rootDir, 1, 1, frames, 1,
-              show, // Show
-              save); // Save <--change this to save files in root directory
+      gui.openAcquisition(acq, rootDir, 1, 1, nrFrames, 1, show, save); 
 
-      // First take images from start to 90 degrees
-      double pos = startAngle;
-      int nrAngles1 = nrAngles / 2;
-      for (int a = 0;
-              a <= nrAngles1;
-              a++) {
-         double val = SAIMCommon.tirfPosFromAngle(prefs, pos);
-         gui.message("Image: " + Integer.toString(a) + ", angle: " + Double.toString(pos) + ", val: " + Double.toString(val));
-         core.setProperty(deviceName, propName, val);
+      boolean doubled = false;
+      int frameNr = 0;
+      for (double angle = startAngle; angle <= -startAngle; angle += angleStepSize) {
+         double pos = SAIMCommon.tirfPosFromAngle(prefs, angle);
+         gui.message("Angle: " + Double.toString(angle) + ", position: " + Double.toString(pos));
+         core.setProperty(deviceName, propName, pos);
          core.waitForDevice(deviceName);
          //gui.sleep(250);
          core.snapImage();
          TaggedImage taggedImg = core.getTaggedImage();
-         taggedImg.tags.put("Angle", pos);
-         gui.addImageToAcquisition(acq, 0, 0, a, 0, taggedImg);
-         pos += angleStepSize;
+         taggedImg.tags.put("Angle", angle);
+         gui.addImageToAcquisition(acq, 0, 0, frameNr, 0, taggedImg);
+         frameNr++;
+         if (doubleZero && !doubled && (angle == 0) ) {
+            angle = -angleStepSize;
+            doubled = true;
+         }
       }
-
-      // if doubleZeroCheckBox is selected, take images from 0 degrees
-      // to (0 - startposition) degrees
-      double pos1 = angleStepSize;
-      int nrAngles2 = nrAngles / 2;
-      if (doubleZero) {
-         pos1 = 0;
-         nrAngles2 = nrAngles / 2 + 1;
-      }
-
-      for (int b = 0;
-              b <= nrAngles2;
-              b++) {
-         double val = SAIMCommon.tirfPosFromAngle(prefs, pos1);
-         gui.message("Image: " + Integer.toString(b) + ", angle: " + Double.toString(pos1) + ", val: " + Double.toString(val));
-         core.setProperty(deviceName, propName, val);
-         core.waitForDevice(deviceName);
-         //gui.sleep(250);
-         core.snapImage();
-         TaggedImage taggedImg = core.getTaggedImage();
-         taggedImg.tags.put("Angle", pos1);
-         gui.addImageToAcquisition(acq, 0, 0, b + nrAngles1, 0, taggedImg);
-         pos1 += angleStepSize;
-      }
-
+      
       return acq;
    }
 }
