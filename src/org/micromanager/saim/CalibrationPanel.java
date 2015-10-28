@@ -38,9 +38,6 @@ import javax.swing.JToggleButton;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
-import javax.swing.text.JTextComponent;
 import mmcorej.CMMCore;
 import mmcorej.DeviceType;
 import mmcorej.StrVector;
@@ -150,7 +147,7 @@ public class CalibrationPanel extends JPanel {
         calcOffsetButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                RunOffsetCalc();
+                runOffsetCalc();
             }
         });
         setupPanel.add(calcOffsetButton, "span 2, center, wrap");
@@ -209,7 +206,7 @@ public class CalibrationPanel extends JPanel {
                 // TODO add your handling code here:
                 if (runButton_.isSelected()) {
                     runButton_.setText("Abort Calibration");
-                    RunCalibration();
+                    runCalibration();
                 } else {
                     runButton_.setText("Run Calibration");
                 }
@@ -223,7 +220,7 @@ public class CalibrationPanel extends JPanel {
         // Combine them all
         add(setupPanel, "span, growx, wrap");
         add(calibratePanel, "span, growx, wrap");
-        UpdateGUIFromPrefs();
+        updateGUIFromPrefs();
 
     }
     
@@ -247,7 +244,7 @@ public class CalibrationPanel extends JPanel {
      * both CCDs. These values determine the 0 angle in the final polynomial fit
      *
      */
-    private void RunOffsetCalc() {
+    private void runOffsetCalc() {
         final double zeroPos = Double.parseDouble(prefs_.get(PrefStrings.ZEROMOTORPOS, "0.0"));
         try {
             core_.setShutterOpen(true);
@@ -348,7 +345,7 @@ public class CalibrationPanel extends JPanel {
      *
      *
      */
-    private void RunCalibration() {
+    private void runCalibration() {
 
         class CalThread extends Thread {
 
@@ -472,7 +469,7 @@ public class CalibrationPanel extends JPanel {
     }    
 
     //function to update panel with stored preferences values
-    public final void UpdateGUIFromPrefs() {
+    public final void updateGUIFromPrefs() {
         zeroMotorPosField_.setText(prefs_.get(PrefStrings.ZEROMOTORPOS, "0.0"));
         serialPortBox_.setSelectedItem(prefs_.get(PrefStrings.SERIALPORT, ""));
         tirfDeviceBox_.setSelectedItem(prefs_.get(PrefStrings.TIRFDEVICE, ""));

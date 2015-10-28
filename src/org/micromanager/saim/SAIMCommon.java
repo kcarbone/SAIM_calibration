@@ -1,3 +1,18 @@
+/**
+ * Nico Stuurman and Kate Carbone 2015
+ * Copyright Regents of the University of California
+ *  
+ * LICENSE:      This file is distributed under the BSD license.
+ *               License text is included with the source distribution.
+ *
+ *               This file is distributed in the hope that it will be useful,
+ *               but WITHOUT ANY WARRANTY; without even the implied warranty
+ *               of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ *               IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+ *               CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ *               INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES.
+ */
 
 package org.micromanager.saim;
 
@@ -5,6 +20,7 @@ import java.util.prefs.Preferences;
 import mmcorej.CMMCore;
 import mmcorej.TaggedImage;
 import org.micromanager.api.ScriptInterface;
+import org.micromanager.saim.exceptions.SAIMException;
 
 /**
  * Functions that are used in multiple panels
@@ -30,30 +46,32 @@ public class SAIMCommon {
    }
 
    /**
-    * This code runs the actual acquisition while flatfielding and when executing
+    * This code runs the actual acquisition while flat-fielding and when executing
     * an acquisition.  
     * 
     * @param gui MMScriptInterface
     * @param prefs Java Preferences used to store all our data
     * @param rootDir where to save this acquisition (if desired)
+    * @param acqName
     * @param show whether or not to show this acquisition
     * @param save whether or not to sava this acquisition
     * @return
     * @throws Exception 
     */
    public static String runAcquisition(final ScriptInterface gui,
-           final Preferences prefs, String rootDir, boolean show, boolean save) 
+           final Preferences prefs, final String rootDir, final String acqName, 
+           final boolean show, final boolean save) 
            throws Exception {
       
       CMMCore core = gui.getMMCore();
       double startAngle = Double.parseDouble(prefs.get(PrefStrings.STARTANGLE, "0.0"));
       if (startAngle > 0) {
-         throw new Exception ("Start angle should be <= 0");
+         throw new SAIMException ("Start angle should be <= 0");
       }
       double angleStepSize = prefs.getDouble(PrefStrings.ANGLESTEPSIZE, 0);
       boolean doubleZero = Boolean.parseBoolean(prefs.get(PrefStrings.DOUBLEZERO, ""));
       if (startAngle % angleStepSize != 0) {
-         throw new Exception("Start angle is not divisible by the angle step size");
+         throw new SAIMException("Start angle is not divisible by the angle step size");
       }
       
       // Set these variables to the correct values and leave
@@ -65,7 +83,7 @@ public class SAIMCommon {
       int nrAngles = (Integer) Math.round((float) tempnrAngles);
 
       //gui_.closeAllAcquisitions();
-      String acq = gui.getUniqueAcquisitionName("FlatField");
+      String acq = gui.getUniqueAcquisitionName(acqName);
 
       int nrFrames = nrAngles + 1;
       if (doubleZero) {

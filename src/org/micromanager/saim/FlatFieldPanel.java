@@ -17,6 +17,7 @@
 //               IN NO EVENT SHALL THE COPYRIGHT OWNER OR
 //               CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
 //               INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES.
+
 package org.micromanager.saim;
 
 import ij.ImagePlus;
@@ -52,6 +53,7 @@ import net.miginfocom.swing.MigLayout;
 import org.micromanager.api.ScriptInterface;
 import org.micromanager.saim.gui.GuiUtils;
 import org.micromanager.acquisition.MMAcquisition;
+import org.micromanager.saim.exceptions.SAIMException;
 import org.micromanager.saim.gui.DragFileToTextField;
 import org.micromanager.utils.ImageUtils;
 import org.micromanager.utils.MMScriptException;
@@ -249,116 +251,12 @@ public class FlatFieldPanel extends JPanel {
 
     }
 
-    /**
-     * User is supposed to set up the acquisition in the micromanager panel.
-     * This function will acquire images at angle positions defined by
-     * calibration.
-     *
-     */
-   private String runAcquisition() throws Exception{
-      return SAIMCommon.runAcquisition(gui_, prefs_, "",
-                 ffShowImagesCheckBox_.isSelected(), false);
-   }
-       /*
-       
-        double startAngle = Double.parseDouble(startAngleField_.getText());
-        double angleStepSize = prefs_.getDouble(PrefStrings.ANGLESTEPSIZE, 0);
-        String acq = "";
-        if (startAngle % angleStepSize == 0) {
-            try {
-                // Set these variables to the correct values and leave
-                final String deviceName = prefs_.get(PrefStrings.TIRFDEVICE, "");
-                final String propName = prefs_.get(PrefStrings.TIRFPROP, "");
-
-                // Usually no need to edit below this line
-                double tempnrAngles = Math.abs(startAngle) * 2 / angleStepSize;
-                int nrAngles = (Integer) Math.round((float) tempnrAngles);
-
-                //gui_.closeAllAcquisitions();
-                acq = gui_.getUniqueAcquisitionName("FlatField");
-
-                int frames = nrAngles + 1;
-                if (doubleZeroCheckBox_.isSelected()) {
-                    frames = nrAngles + 2;
-                }
-
-                if (ffShowImagesCheckBox_.isSelected()) {
-                    gui_.openAcquisition(acq,
-                            "", 1, 1, frames, 1,
-                            true, // Show
-                            false); // Save <--change this to save files in root directory
-                } else {
-                    gui_.openAcquisition(acq,
-                            "", 1, 1, frames, 1,
-                            false, // Show
-                            false); // Save <--change this to save files in root directory
-                }
-
-                // First take images from start to 90 degrees
-                double pos = startAngle;
-                int nrAngles1 = nrAngles / 2;
-                for (int a = 0;
-                        a <= nrAngles1;
-                        a++) {
-                    double val = SAIMCommon.tirfPosFromAngle(prefs_, pos);
-                    gui_.message("Image: " + Integer.toString(a) + ", angle: " + Double.toString(pos) + ", val: " + Double.toString(val));
-                    core_.setProperty(deviceName, propName, val);
-                    core_.waitForDevice(deviceName);
-                    //gui.sleep(250);
-                    core_.snapImage();
-                    TaggedImage taggedImg = core_.getTaggedImage();
-                    taggedImg.tags.put("Angle", pos);
-                    gui_.addImageToAcquisition(acq, 0, 0, a, 0, taggedImg);
-                    pos += angleStepSize;
-                }
-
-                // if doubleZeroCheckBox is selected, take images from 0 degrees
-                //to (0 - startposition) degrees
-                double pos1 = angleStepSize;
-                int nrAngles2 = nrAngles / 2;
-                if (doubleZeroCheckBox_.isSelected()) {
-                    pos1 = 0;
-                    nrAngles2 = nrAngles / 2 + 1;
-                }
-
-                for (int b = 0;
-                        b <= nrAngles2;
-                        b++) {
-                    double val = SAIMCommon.tirfPosFromAngle(prefs_, pos1);
-                    gui_.message("Image: " + Integer.toString(b) + ", angle: " + Double.toString(pos1) + ", val: " + Double.toString(val));
-                    core_.setProperty(deviceName, propName, val);
-                    core_.waitForDevice(deviceName);
-                    //gui.sleep(250);
-                    core_.snapImage();
-                    TaggedImage taggedImg = core_.getTaggedImage();
-                    taggedImg.tags.put("Angle", pos1);
-                    gui_.addImageToAcquisition(acq, 0, 0, b + nrAngles1, 0, taggedImg);
-                    pos1 += angleStepSize;
-                }
-
-                //gui_.closeAcquisition(acq);
-            } catch (Exception ex) {
-                //ex.printStackTrace();
-                ij.IJ.log(ex.getMessage());
-                ij.IJ.error("Something went wrong.  Aborting!");
-            } finally {
-                runButton_.setSelected(false);
-                runButton_.setText("Run FlatField");
-            }
-        } else {
-            ij.IJ.error("Start angle is not divisible by angle step size!");
-            runButton_.setSelected(false);
-            runButton_.setText("Run FlatField");
-        }
-        return acq;
-    }
-*/
-    /**
-     * User is supposed to set up the acquisition in the micromanager panel.
-     * This function will prompt the user to move the stage to 5 positions and
-     * will acquire a SAIM scan (RunAcquisition) at each position
-     *
-     */
+   /**
+    * User is supposed to set up the acquisition in the micromanager panel. This
+    * function will prompt the user to move the stage to 5 positions and will
+    * acquire a SAIM scan (RunAcquisition) at each position
+    *
+    */
    private void runFlatField() {
 
       class AcqThread extends Thread {
@@ -369,50 +267,39 @@ public class FlatFieldPanel extends JPanel {
 
          @Override
          public void run() {
+            
             int count = 1;
             List<String> acqs = new ArrayList<String>();
-            while (true) {
-               GenericDialog okWindow = new NonBlockingGenericDialog("FlatField Image " + Integer.toString(count));
-               okWindow.setCancelLabel("Done");
-               okWindow.addMessage("Move stage to new position and click OK to start acquisition.");
-               okWindow.showDialog();
-               count = count + 1;
-               if (okWindow.wasCanceled()) {
-                  runButton_.setSelected(false);
-                  runButton_.setText("Run FlatField");
-                  break;
-               }
-               try {
-                  acqs.add(SAIMCommon.runAcquisition(gui_, prefs_, "",
-                              ffShowImagesCheckBox_.isSelected(), false));
-               } catch (Exception ex) {
-                  ij.IJ.log(ex.getMessage());
-                  if (ex.getMessage().equals("Start angle is not divisible by the angle step size")) {
-                     ij.IJ.error(ex.getMessage());
-                  } else {
-                     ij.IJ.error("Something went wrong.  Aborting!");
+            ImageStack flatFieldStack = null;
+            
+            try {
+               while (true) {
+                  GenericDialog okWindow = new NonBlockingGenericDialog("FlatField Image " + Integer.toString(count));
+                  okWindow.setCancelLabel("Done");
+                  okWindow.addMessage("Move stage to new position and click OK to start acquisition.");
+                  okWindow.showDialog();
+                  count = count + 1;
+                  if (okWindow.wasCanceled()) {
+                     runButton_.setSelected(false);
+                     runButton_.setText("Run FlatField");
+                     break;
                   }
+
+                  acqs.add(SAIMCommon.runAcquisition(gui_, prefs_, "", "Flatfield",
+                          ffShowImagesCheckBox_.isSelected(), false));
+               }
+
+               //start with list of acqs, calculate median
+               if (acqs.isEmpty()) {
                   runButton_.setSelected(false);
                   runButton_.setText("Run FlatField");
                   return;
                }
 
-            }
-
-            //start with list of acqs, calculate median
-            if (acqs.isEmpty()) {
-               runButton_.setSelected(false);
-               runButton_.setText("Run FlatField");
-               return;
-            }
-
-            ImageStack flatFieldStack = null;
-
-            try {
                MMAcquisition mAcq = gui_.getAcquisition(acqs.get(0));
                flatFieldStack = new ImageStack(mAcq.getWidth(),
                        mAcq.getHeight(), mAcq.getSlices());
-                                    // get the background image from file.
+               // get the background image from file.
                // this should be a single frame of the same dimensions as the acquisitions
                ImagePlus background = null;
                String backgroundFile = backgroundFileField_.getText();
@@ -424,13 +311,13 @@ public class FlatFieldPanel extends JPanel {
                      ij.IJ.showMessage("Background file is of different size or type then the just acquired images.  Ignoring background");
                      background = null;
                   } else {
-                           // since our median image will be 32-bit, we need to convert
+                     // since our median image will be 32-bit, we need to convert
                      // the backgroun image to 32-bit as well
                      background.setProcessor(background.getProcessor().convertToFloatProcessor());
                   }
                }
+               
                for (int slice = 0; slice < mAcq.getSlices(); slice++) {
-                  
                   // make a stack to use to calculate the median of all our flatfield acquisitions
                   ImageStack stack = new ImageStack(mAcq.getWidth(), mAcq.getHeight(), acqs.size());
                   for (int xyPos = 0; xyPos < acqs.size(); xyPos++) {
@@ -438,7 +325,7 @@ public class FlatFieldPanel extends JPanel {
                              gui_.getAcquisitionImageCache(acqs.get(xyPos)).getImage(0, slice, 0, 0));
                      stack.setProcessor(proc, xyPos + 1);
                   }
-                  
+
                   //make median image from set of ImageProcessors
                   ImagePlus iPlus = new ImagePlus("t", stack);
                   ZProjector zProj = new ZProjector(iPlus);
@@ -463,15 +350,15 @@ public class FlatFieldPanel extends JPanel {
                   }
                   flatFieldStack.setProcessor(median.getProcessor(), slice + 1);
                }
+               
+            } catch (SAIMException saimEx) {
+               ij.IJ.error(saimEx.getMessage());
             } catch (MMScriptException ex) {
-               //ex.printStackTrace();
                ij.IJ.error("MMScript Error while calculating median image");
             } catch (Exception ex) {
-               //ex.printStackTrace();
-               ij.IJ.error("Something went wrong while calculating median image");
+               ij.IJ.error("Something went wrong, aborting");
             } finally {
                gui_.closeAllAcquisitions();
-               
                // show the flatfield Stack
                if (flatFieldStack != null) {
                   ImagePlus flatField = new ImagePlus("flatField",
@@ -481,15 +368,16 @@ public class FlatFieldPanel extends JPanel {
                runButton_.setSelected(false);
                runButton_.setText("Run FlatField");
             }
+            
          }
-      }
+      }  // end of AcqThread
 
       AcqThread acqT = new AcqThread("SAIM Acquisition");
       acqT.start();
 
    }
 
-    // function to add preferences values to each field that uses them
+   // function to add preferences values to each field that uses them
    public final void updateGUIFromPrefs() {
       angleStepSizeSpinner_.setValue(Double.parseDouble(prefs_.get(PrefStrings.ANGLESTEPSIZE, "")));
       startAngleField_.setText(prefs_.get(PrefStrings.STARTANGLE, ""));

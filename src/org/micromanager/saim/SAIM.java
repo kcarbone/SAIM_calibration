@@ -1,7 +1,7 @@
 /**
  *
- * Nico Stuurman, 2012, Kate Carbone 2015
- * copyright Regents of the University of California
+ * Nico Stuurman and Kate Carbone 2015
+ * Copyright Regents of the University of California
  *  
  * LICENSE:      This file is distributed under the BSD license.
  *               License text is included with the source distribution.
