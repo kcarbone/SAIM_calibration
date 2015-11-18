@@ -39,6 +39,7 @@ import javax.swing.SpinnerNumberModel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import mmcorej.CMMCore;
+import mmcorej.CharVector;
 import mmcorej.DeviceType;
 import mmcorej.StrVector;
 import net.miginfocom.swing.MigLayout;
@@ -285,6 +286,22 @@ public class CalibrationPanel extends JPanel {
             ij.IJ.log("Pos: " + pos);
             //Send command to calibration device, record pixel intensity vales
             core_.setSerialPortCommand(port, "1", "");
+            CharVector buffer = new CharVector(6144);
+            int charsRead = 0;
+            CharVector tmp;
+            long timeOut = System.currentTimeMillis() + 2500;
+            while (charsRead < 6144 && System.currentTimeMillis() < timeOut) {
+               tmp = core_.readFromSerialPort(port);
+               charsRead += tmp.size();
+               for (int j = 0; j < tmp.size(); j++) {
+                  buffer.add(tmp.get(j));
+               }
+            }
+            if (charsRead != 6144) {
+               throw new Exception ("Device did not send epected data: Received only " + charsRead + " bytes");
+            }
+            
+          /*
             for (i = 0; i < 1536; i++) {
                 String answer = core_.getSerialPortAnswer(port, "\n");
                 String[] vals = answer.trim().split("\\t");
@@ -297,6 +314,7 @@ public class CalibrationPanel extends JPanel {
                     System.out.println("Val is not 2: " + answer);
                 }
             }
+          */
 
             //shuffle values of detector 1 to match physical layout of pixels
             int size = dect1readings.getItemCount();
