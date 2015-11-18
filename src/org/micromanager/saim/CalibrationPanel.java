@@ -315,8 +315,8 @@ public class CalibrationPanel extends JPanel {
            //Fit result to a gaussian
            double[] result1 = new double[4];
            double[] result2 = new double[4];
-           toPlot[2] = new XYSeries(1536);
-           toPlot[3] = new XYSeries(1536);
+           toPlot[2] = new XYSeries(3);
+           toPlot[3] = new XYSeries(4);
            try {
               result1 = Fitter.fit(dect1readingsFlip, Fitter.FunctionType.Gaussian, null);
               toPlot[2] = Fitter.getFittedSeries(dect1readingsFlip, Fitter.FunctionType.Gaussian, result1);
