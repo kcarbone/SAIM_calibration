@@ -23,6 +23,8 @@ import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.geom.Point2D;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.text.DecimalFormat;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -284,37 +286,40 @@ public class CalibrationPanel extends JPanel {
             core_.setProperty(deviceName, propName, pos);
             core_.waitForDevice(deviceName);
             ij.IJ.log("Pos: " + pos);
+            
+            // Read any junk remaining in serial port buffer
+            CharVector tmp = core_.readFromSerialPort(port);
+            if (!tmp.isEmpty())
+               ij.IJ.log("Found " + tmp.size() + " characters in serial port buffer");
+            
+            // log time for optimization purposes (can deleted afterwards)
+            long startTime = System.currentTimeMillis();
+            
             //Send command to calibration device, record pixel intensity vales
             core_.setSerialPortCommand(port, "1", "");
-            CharVector buffer = new CharVector(6144);
+            
+            // read binary data from Arduino
+            byte[] buffer = new byte[6144];
             int charsRead = 0;
-            CharVector tmp;
-            long timeOut = System.currentTimeMillis() + 2500;
+            long timeOut = System.currentTimeMillis() + 4500;
             while (charsRead < 6144 && System.currentTimeMillis() < timeOut) {
                tmp = core_.readFromSerialPort(port);
-               charsRead += tmp.size();
                for (int j = 0; j < tmp.size(); j++) {
-                  buffer.add(tmp.get(j));
+                  buffer[charsRead + j] = (byte) tmp.get(j);
                }
+               charsRead += tmp.size();
             }
             if (charsRead != 6144) {
                throw new Exception ("Device did not send epected data: Received only " + charsRead + " bytes");
             }
-            
-          /*
+            ij.IJ.log("Device needed " + (System.currentTimeMillis() - startTime) + " ms to acquired and send the data");
             for (i = 0; i < 1536; i++) {
-                String answer = core_.getSerialPortAnswer(port, "\n");
-                String[] vals = answer.trim().split("\\t");
-                if (vals.length == 2) {
-                    int dect1px = Integer.valueOf(vals[0]);
-                    int dect2px = Integer.valueOf(vals[1]);
-                    dect1readings.add(i, dect1px);
-                    dect2readings.add(i, dect2px);
-                } else {
-                    System.out.println("Val is not 2: " + answer);
-                }
-            }
-          */
+              short dect1px = shortFrom2Bytes(buffer[i * 2], buffer[i * 2 + 1]);
+              short dect2px = shortFrom2Bytes(buffer[3072 + i * 2], 
+                      buffer[3072 + i * 2 + 1]);
+              dect1readings.add(i, dect1px);
+              dect2readings.add(i, dect2px);
+           }
 
             //shuffle values of detector 1 to match physical layout of pixels
             int size = dect1readings.getItemCount();
@@ -353,11 +358,21 @@ public class CalibrationPanel extends JPanel {
             return new Point2D.Double(result1[1], result2[1]);
 
         } catch (Exception ex) {
+           ex.printStackTrace();;
             ij.IJ.log(ex.getMessage() + "\nRan until # " + i);
         }
         return null;
     }
 
+    
+   private short shortFrom2Bytes(byte byte1, byte byte2) {
+      ByteBuffer bb = ByteBuffer.allocate(2);
+      bb.order(ByteOrder.LITTLE_ENDIAN);
+      bb.put(byte1);
+      bb.put(byte2);
+      return bb.getShort(0);
+   }
+    
     /**
      * Runs the calibration itself in its own thread.
      *
