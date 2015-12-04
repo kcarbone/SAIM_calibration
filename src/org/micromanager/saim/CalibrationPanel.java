@@ -312,7 +312,7 @@ public class CalibrationPanel extends JPanel {
             if (charsRead != 6144) {
                throw new Exception ("Device did not send epected data: Received only " + charsRead + " bytes");
             }
-            ij.IJ.log("Device needed " + (System.currentTimeMillis() - startTime) + " ms to acquired and send the data");
+            //ij.IJ.log("Device needed " + (System.currentTimeMillis() - startTime) + " ms to acquired and send the data");
             for (i = 0; i < 1536; i++) {
               short dect1px = shortFrom2Bytes(buffer[i * 2], buffer[i * 2 + 1]);
               short dect2px = shortFrom2Bytes(buffer[3072 + i * 2], 
@@ -321,17 +321,19 @@ public class CalibrationPanel extends JPanel {
               dect2readings.add(i, dect2px);
            }
 
+            //Not needed for calibrator verson 3.0 and beyong
             //shuffle values of detector 1 to match physical layout of pixels
-            int size = dect1readings.getItemCount();
-            XYSeries dect1readingsFlip = new XYSeries("lower", false, true);
-            for (int a = 0; a < size; a++) {
-                Number pxvalue = dect1readings.getY(size - 1 - a);
-                dect1readingsFlip.add(a, pxvalue);
-            }
+            //int size = dect1readings.getItemCount();
+            //XYSeries dect1readingsFlip = new XYSeries("lower", false, true);
+            //for (int a = 0; a < size; a++) {
+            //    Number pxvalue = dect1readings.getY(size - 1 - a);
+            //    dect1readingsFlip.add(a, pxvalue);
+            //}
+            
             //setup plotting detector readings
             PlotUtils myPlotter = new PlotUtils(prefs_);
             XYSeries[] toPlot = new XYSeries[4];
-            toPlot[0] = dect1readingsFlip;
+            toPlot[0] = dect1readings;
             toPlot[1] = dect2readings;
             boolean[] showShapes = {true, true, false, false};
 
@@ -341,8 +343,8 @@ public class CalibrationPanel extends JPanel {
            toPlot[2] = new XYSeries(3);
            toPlot[3] = new XYSeries(4);
            try {
-              result1 = Fitter.fit(dect1readingsFlip, Fitter.FunctionType.Gaussian, null);
-              toPlot[2] = Fitter.getFittedSeries(dect1readingsFlip, Fitter.FunctionType.Gaussian, result1);
+              result1 = Fitter.fit(dect1readings, Fitter.FunctionType.Gaussian, null);
+              toPlot[2] = Fitter.getFittedSeries(dect1readings, Fitter.FunctionType.Gaussian, result1);
               ij.IJ.log("Dectector 1 Mean: " + result1[1] + "\n");
               result2 = Fitter.fit(dect2readings, Fitter.FunctionType.Gaussian, null);
               toPlot[3] = Fitter.getFittedSeries(dect2readings, Fitter.FunctionType.Gaussian, result2);

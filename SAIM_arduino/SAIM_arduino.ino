@@ -1,6 +1,6 @@
 int led = 13;
 int CLKpin = 4;    // <-- Arduino pin delivering the clock pulses to pin 3 (CLK) of the TSL1412S
-int SIpin = 5;     // <-- Arduino pin delivering the SI (serial-input) pulse to pin 2 of the TSL1412S
+int SIpin = 3;     // <-- Arduino pin delivering the SI (serial-input) pulse to pin 2 of the TSL1412S
 int AOpin1 = 1;    // <-- Arduino pin connected to pin 4 (analog output 1)of first TSL1412S (Detector 1)
 int AOpin2 = 2;    // <-- Arduino pin connected to pin 8 (analog output 2)of first TSL1412S (Detector 1)
 int AOpin3 = 3;    // <-- Arduino pin connected to pin 4 (analog output 1)of second TSL1412S (Detector 2)
