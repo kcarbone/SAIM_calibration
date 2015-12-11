@@ -1,10 +1,8 @@
 int led = 13;
 int CLKpin = 4;    // <-- Arduino pin delivering the clock pulses to pin 3 (CLK) of the TSL1412S
 int SIpin = 3;     // <-- Arduino pin delivering the SI (serial-input) pulse to pin 2 of the TSL1412S
-int AOpin1 = 1;    // <-- Arduino pin connected to pin 4 (analog output 1)of first TSL1412S (Detector 1)
-int AOpin2 = 2;    // <-- Arduino pin connected to pin 8 (analog output 2)of first TSL1412S (Detector 1)
-int AOpin3 = 3;    // <-- Arduino pin connected to pin 4 (analog output 1)of second TSL1412S (Detector 2)
-int AOpin4 = 4;    // <-- Arduino pin connected to pin 8 (analog output 1)of second TSL1412S (Detector 2)
+int AOpin1 = 5;    // <-- Arduino pin connected to first TSL1412S (Detector 1)
+int AOpin2 = 7;    // <-- Arduino pin connected to second TSL1412S (Detector 2)
 short dataD1[1536]; // <-- Array where readout of the photodiodes is stored, as short for Detector 1
 short dataD2[1536]; // <-- Array where readout of the photodiodes is stored, as short for Detector 2
 char serialCommand = '0';
@@ -80,14 +78,14 @@ void ClockPulse() {
 //Clear the register so camera is ready to expose an image
 void Initialize() {
   // Clock out any existing SI pulse through the ccd register:
-  for (int i = 0; i < 786; i++) {
+  for (int i = 0; i < 1554; i++) {
     ClockPulse();
   }
   // Create a new SI pulse and clock out that same SI pulse through the sensor register:
   digitalWrite(SIpin, HIGH);
   ClockPulse();
   digitalWrite(SIpin, LOW);
-  for (int i = 0; i < 786; i++)
+  for (int i = 0; i < 1554; i++)
   {
     ClockPulse();
   }
@@ -96,11 +94,9 @@ void Initialize() {
 
 void ClearAnalog() {
     // try to clear the Anolog input pins by reading them a number of time:
-  for (int i = 0; i < 100; i++) {
+  for (int i = 0; i < 1000; i++) {
     analogRead(AOpin1);
     analogRead(AOpin2);
-    analogRead(AOpin3);
-    analogRead(AOpin4);
   }
   
 }
@@ -112,8 +108,8 @@ void ReadAnalog() {
   ClockPulse();
   digitalWrite(SIpin, LOW);
   // For the first 18 clock pulses the sensor is not integrating, set integration time by 
-  //increasing the value (768 was by trial and error)
-  for(int i=0; i < 768; i++) {  
+  //increasing the value (750 was by trial and error)
+  for(int i=0; i < 1536; i++) {  
     ClockPulse();
   }
     
@@ -125,12 +121,10 @@ void ReadAnalog() {
   ClockPulse();
   digitalWrite(SIpin, LOW);
   
-  for(int i=0; i < 768; i++) {
+  for(int i=0; i < 1536; i++) {
     delayMicroseconds(20);// <-- We add a delay to stabilize the AO output from the sensor
     dataD1[i] = analogRead(AOpin1);
-    dataD1[i+768] = analogRead(AOpin2);
-    dataD2[i] = analogRead(AOpin3);
-    dataD2[i+768] = analogRead(AOpin4);
+    dataD2[i] = analogRead(AOpin2);
     ClockPulse();
   }
 }
@@ -143,8 +137,8 @@ void SendReading() {
   } else if (port == 1) { // native port
     SerialUSB.write( (uint8_t*) dataD1, 3072);
     SerialUSB.write( (uint8_t*) dataD2, 3072);
-    SerialUSB.println();
-    SerialUSB.println("Done!");
+    //SerialUSB.println();
+    //SerialUSB.println("Done!");
   }
   //for (int i = 0; i < 1536; i++) {
   //  Serial.print(IntArray[i]); Serial.print("\t"); Serial.print(dataD2[i]); Serial.print("\n");
