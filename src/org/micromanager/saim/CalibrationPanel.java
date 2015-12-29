@@ -445,8 +445,8 @@ public class CalibrationPanel extends JPanel {
                         Double motorPosition = dect1gaussianMeans.getX(l).doubleValue();
                         Double dect1val = dect1gaussianMeans.getY(l).doubleValue();
                         Double dect2val = dect2gaussianMeans.getY(l).doubleValue() + detectorOffset;
-                        //pixel center to center distance is 63.5 um
-                        double xdisp = (dect1val.floatValue() - dect2val.floatValue()) * 0.0635;
+                        //pixel center to center distance is 51.0 um (old detector design was 63.5 um)
+                        double xdisp = (dect1val.floatValue() - dect2val.floatValue()) * 0.0510;
                         //detector1 center to detector2 center is 20.64 mm
                         double ydisp = 20.64;
                         Double observedAngle = Math.toDegrees(Math.atan(xdisp / ydisp));
