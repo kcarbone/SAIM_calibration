@@ -445,10 +445,10 @@ public class CalibrationPanel extends JPanel {
                         Double motorPosition = dect1gaussianMeans.getX(l).doubleValue();
                         Double dect1val = dect1gaussianMeans.getY(l).doubleValue();
                         Double dect2val = dect2gaussianMeans.getY(l).doubleValue() + detectorOffset;
-                        //pixel center to center distance is 51.0 um (old detector design was 63.5 um)
-                        double xdisp = (dect1val.floatValue() - dect2val.floatValue()) * 0.0510;
-                        //detector1 center to detector2 center is 20.64 mm
-                        double ydisp = 20.64;
+                        //pixel center to center distance is 63.5 um 
+                        double xdisp = (dect1val.floatValue() - dect2val.floatValue()) * 0.0635;
+                        //detector1 center to detector2 center is 12.95 mm (old detector design was 20.64 mm)
+                        double ydisp = 12.95;
                         Double observedAngle = Math.toDegrees(Math.atan(xdisp / ydisp));
                         //Snells law correction angle of laser light for refractive index 
                         //Refractive indeces: acrylic = 1.49, water = 1.33, user input = RI
