@@ -66,11 +66,11 @@ public class SAIMFrame extends MMFrame {
       tabbedPane_ = new JTabbedPane();
 
       final AcquisitionPanel acqPanel = new AcquisitionPanel(gui_, prefs_);
-      final FlatFieldPanel ffPanel = new FlatFieldPanel(gui_, prefs_);
+      //final FlatFieldPanel ffPanel = new FlatFieldPanel(gui_, prefs_);
       final CalibrationPanel calPanel = new CalibrationPanel(gui_, prefs_);
       
       tabbedPane_.add(calPanel);
-      tabbedPane_.add(ffPanel);
+      //tabbedPane_.add(ffPanel);
       tabbedPane_.add(acqPanel);
 
       tabbedPane_.addChangeListener(new ChangeListener() {
@@ -81,10 +81,10 @@ public class SAIMFrame extends MMFrame {
             if (tabbedPane_.getSelectedIndex() == 0) {
                calPanel.updateGUIFromPrefs();
             }
+            //if (tabbedPane_.getSelectedIndex() == 2) {
+            //   ffPanel.updateGUIFromPrefs();
+            //}
             if (tabbedPane_.getSelectedIndex() == 1) {
-               ffPanel.updateGUIFromPrefs();
-            }
-            if (tabbedPane_.getSelectedIndex() == 2) {
               acqPanel.updateGUIFromPrefs();
             }
          }
