@@ -24,6 +24,8 @@ import java.awt.dnd.DropTarget;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -66,10 +68,13 @@ public class AcquisitionPanel extends JPanel {
    private final JButton acqdirRootButton_;
    private final JTextField acqnamePrefixField_;
    private final JToggleButton runButton_;
+   private final JLabel channelField_;
+   private final JButton updateChannelButton_;
    private final JTextField coeff3Field_;
    private final JTextField coeff2Field_;
    private final JTextField coeff1Field_;
    private final JTextField coeff0Field_;
+
 
    public AcquisitionPanel(ScriptInterface gui, Preferences prefs) {
       super(new MigLayout(
@@ -91,7 +96,7 @@ public class AcquisitionPanel extends JPanel {
       setupPanel.add(new JLabel("Start Angle:"));
       startAngleField_ = new JTextField("");
       GuiUtils.setTextAttributes(startAngleField_, componentSize);
-      GuiUtils.tieTextFieldToPrefs(prefs, startAngleField_, PrefStrings.STARTANGLE);
+      GuiUtils.tieTextFieldToPrefs(prefs, startAngleField_, PrefUtils.STARTANGLE);
       setupPanel.add(startAngleField_, "span, growx, wrap");
       
       // set angle step size
@@ -101,7 +106,7 @@ public class AcquisitionPanel extends JPanel {
       angleStepSizeSpinner_.addChangeListener(new ChangeListener() {
          @Override
          public void stateChanged(ChangeEvent e) {
-            prefs_.putDouble(PrefStrings.ANGLESTEPSIZE, (Double) angleStepSizeSpinner_.getValue());
+            prefs_.putDouble(PrefUtils.ANGLESTEPSIZE, (Double) angleStepSizeSpinner_.getValue());
          }
       });
       setupPanel.add(angleStepSizeSpinner_, "span, growx, wrap");
@@ -114,9 +119,9 @@ public class AcquisitionPanel extends JPanel {
          @Override
          public void actionPerformed(ActionEvent e) {
             if (doubleZeroCheckBox_.isSelected()) {
-               prefs_.putBoolean(PrefStrings.DOUBLEZERO, true);
+               prefs_.putBoolean(PrefUtils.DOUBLEZERO, true);
             } else {
-               prefs_.putBoolean(PrefStrings.DOUBLEZERO, false);
+               prefs_.putBoolean(PrefUtils.DOUBLEZERO, false);
             }
          }
       });
@@ -127,33 +132,46 @@ public class AcquisitionPanel extends JPanel {
               "", ""));
       calPanel_.setBorder(GuiUtils.makeTitledBorder("Calibration Values"));
 
+      //Current channel
+      calPanel_.add(new JLabel("Channel: "));
+      channelField_ = new JLabel("");
+      calPanel_.add(channelField_);
+      updateChannelButton_ = new JButton("Update");
+         updateChannelButton_.addActionListener(new ActionListener() {
+         @Override
+         public void actionPerformed(ActionEvent e) {
+            updateGUIFromPrefs();
+         }
+      });
+      calPanel_.add(updateChannelButton_, "span, center, wrap");
+      
       //Set calibration values
       //x3 coefficient
       calPanel_.add(new JLabel("<html>x<sup>3</sup>: </html>"));
       coeff3Field_ = new JTextField("");
       GuiUtils.setTextAttributes(coeff3Field_, componentSize);
-      GuiUtils.tieTextFieldToPrefs(prefs, coeff3Field_, PrefStrings.COEFF3);
+      GuiUtils.tieTextFieldToPrefs(prefs, coeff3Field_, PrefUtils.parseCal(3, prefs_, gui_));
       calPanel_.add(coeff3Field_, "span, center, wrap");
 
       //x2 coefficient
       calPanel_.add(new JLabel("<html>x<sup>2</sup>: </html>"));
       coeff2Field_ = new JTextField("");
       GuiUtils.setTextAttributes(coeff2Field_, componentSize);
-      GuiUtils.tieTextFieldToPrefs(prefs, coeff2Field_, PrefStrings.COEFF2);
+      GuiUtils.tieTextFieldToPrefs(prefs, coeff2Field_, PrefUtils.parseCal(2, prefs_, gui_));
       calPanel_.add(coeff2Field_, "span, center, wrap");
 
       //x coefficient
       calPanel_.add(new JLabel("x: "));
       coeff1Field_ = new JTextField("");
       GuiUtils.setTextAttributes(coeff1Field_, componentSize);
-      GuiUtils.tieTextFieldToPrefs(prefs, coeff1Field_, PrefStrings.COEFF1);
+      GuiUtils.tieTextFieldToPrefs(prefs, coeff1Field_, PrefUtils.parseCal(1, prefs_, gui_));
       calPanel_.add(coeff1Field_, "span, center, wrap");
 
       //x0 constant
       calPanel_.add(new JLabel("<html>x<sup>0</sup>: </html>"));
       coeff0Field_ = new JTextField("");
       GuiUtils.setTextAttributes(coeff0Field_, componentSize);
-      GuiUtils.tieTextFieldToPrefs(prefs, coeff0Field_, PrefStrings.COEFF0);
+      GuiUtils.tieTextFieldToPrefs(prefs, coeff0Field_, PrefUtils.parseCal(0, prefs_, gui_));
       calPanel_.add(coeff0Field_, "span, center, wrap");
 
       // Acquire Panel
@@ -169,7 +187,7 @@ public class AcquisitionPanel extends JPanel {
       acqdirRootChooser_.addActionListener(new ActionListener() {
          @Override
          public void actionPerformed(ActionEvent e) {
-            prefs_.put(PrefStrings.ACQDIRROOT, acqdirRootChooser_.getName());
+            prefs_.put(PrefUtils.ACQDIRROOT, acqdirRootChooser_.getName());
          }
       });
 
@@ -180,11 +198,11 @@ public class AcquisitionPanel extends JPanel {
       acqdirRootField_.addActionListener(new ActionListener() {
          @Override
          public void actionPerformed(ActionEvent e) {
-            prefs_.put(PrefStrings.ACQDIRROOT, acqdirRootField_.getText());
+            prefs_.put(PrefUtils.ACQDIRROOT, acqdirRootField_.getText());
          }
       });
       DropTarget dt = new DropTarget(acqdirRootField_,
-              new DragFileToTextField(acqdirRootField_, true, prefs, PrefStrings.ACQDIRROOT));
+              new DragFileToTextField(acqdirRootField_, true, prefs, PrefUtils.ACQDIRROOT));
       acquirePanel.add(acqdirRootField_);
 
       //set directory chooser button
@@ -204,7 +222,7 @@ public class AcquisitionPanel extends JPanel {
       acqnamePrefixField_.addActionListener(new ActionListener() {
          @Override
          public void actionPerformed(ActionEvent e) {
-            prefs_.put(PrefStrings.ACQNAMEPREFIX, acqnamePrefixField_.getText());
+            prefs_.put(PrefUtils.ACQNAMEPREFIX, acqnamePrefixField_.getText());
          }
       });
       acquirePanel.add(acqnamePrefixField_, "span, growx, wrap");
@@ -215,9 +233,9 @@ public class AcquisitionPanel extends JPanel {
          @Override
          public void actionPerformed(ActionEvent e) {
             if (saveImagesCheckBox_.isSelected()) {
-               prefs_.putBoolean(PrefStrings.ACQSAVEIMAGES, true);
+               prefs_.putBoolean(PrefUtils.ACQSAVEIMAGES, true);
             } else {
-               prefs_.putBoolean(PrefStrings.ACQSAVEIMAGES, false);
+               prefs_.putBoolean(PrefUtils.ACQSAVEIMAGES, false);
             }
          }
       });
@@ -255,6 +273,7 @@ public class AcquisitionPanel extends JPanel {
          acqdirRootField_.setText(result.getAbsolutePath());
       }
    }
+   
 
    /**
     * User is supposed to set up the acquisition in the micro-manager panel.
@@ -293,18 +312,26 @@ public class AcquisitionPanel extends JPanel {
 
    }
    
+   
    //function to add preferences values to each field that uses them
    public final void updateGUIFromPrefs() {
-        angleStepSizeSpinner_.setValue(Double.parseDouble(prefs_.get(PrefStrings.ANGLESTEPSIZE, "0.0")));
-        startAngleField_.setText(prefs_.get(PrefStrings.STARTANGLE, ""));
-        doubleZeroCheckBox_.setSelected(Boolean.parseBoolean(prefs_.get(PrefStrings.DOUBLEZERO, "")));
-        saveImagesCheckBox_.setSelected(Boolean.parseBoolean(prefs_.get(PrefStrings.ACQSAVEIMAGES, "")));
-        acqdirRootField_.setText(prefs_.get(PrefStrings.ACQDIRROOT, ""));
-        acqnamePrefixField_.setText(prefs_.get(PrefStrings.ACQNAMEPREFIX, ""));
-        coeff3Field_.setText(prefs_.get(PrefStrings.COEFF3, ""));
-        coeff2Field_.setText(prefs_.get(PrefStrings.COEFF2, ""));
-        coeff1Field_.setText(prefs_.get(PrefStrings.COEFF1, ""));
-        coeff0Field_.setText(prefs_.get(PrefStrings.COEFF0, ""));
+       try {
+           angleStepSizeSpinner_.setValue(Double.parseDouble(prefs_.get(PrefUtils.ANGLESTEPSIZE, "0.0")));
+           startAngleField_.setText(prefs_.get(PrefUtils.STARTANGLE, ""));
+           doubleZeroCheckBox_.setSelected(Boolean.parseBoolean(prefs_.get(PrefUtils.DOUBLEZERO, "")));
+           saveImagesCheckBox_.setSelected(Boolean.parseBoolean(prefs_.get(PrefUtils.ACQSAVEIMAGES, "")));
+           acqdirRootField_.setText(prefs_.get(PrefUtils.ACQDIRROOT, ""));
+           acqnamePrefixField_.setText(prefs_.get(PrefUtils.ACQNAMEPREFIX, ""));
+           coeff3Field_.setText(PrefUtils.parseCal(3, prefs_, gui_));
+           coeff2Field_.setText(PrefUtils.parseCal(2, prefs_, gui_));
+           coeff1Field_.setText(PrefUtils.parseCal(1, prefs_, gui_));
+           coeff0Field_.setText(PrefUtils.parseCal(0, prefs_, gui_));
+           core_.getCurrentConfig("Channel");
+           prefs_.put(PrefUtils.CHANNEL, core_.getCurrentConfig("Channel"));
+           channelField_.setText(prefs_.get(PrefUtils.CHANNEL,""));
+       } catch (Exception ex) {
+           Logger.getLogger(AcquisitionPanel.class.getName()).log(Level.SEVERE, null, ex);
+       }
     }
 
 }

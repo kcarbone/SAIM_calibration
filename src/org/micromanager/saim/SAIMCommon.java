@@ -30,17 +30,18 @@ public class SAIMCommon {
    /**
     * Utility to convert angle to tirf positions using our polynomial equation
     * @param prefs - Java prefs used to store our coefficients
+    * @param gui
     * @param angle Desired angle
     * @return Tirf motor position
     */
-   public static int tirfPosFromAngle(Preferences prefs, double angle) {
+   public static int tirfPosFromAngle(Preferences prefs, final ScriptInterface gui, double angle) {
       // TirfPosition = slope * angle plus Offset
       // Output motor position must be an integer to be interpreted by TITIRF
 
-      double tempPos = (Double.parseDouble(prefs.get(PrefStrings.COEFF3, "")) * Math.pow(angle, 3)
-              + Double.parseDouble(prefs.get(PrefStrings.COEFF2, "")) * Math.pow(angle, 2)
-              + Double.parseDouble(prefs.get(PrefStrings.COEFF1, "")) * angle
-              + Double.parseDouble(prefs.get(PrefStrings.COEFF0, "")));
+      double tempPos = (Double.parseDouble(PrefUtils.parseCal(3, prefs, gui)) * Math.pow(angle, 3)
+              + Double.parseDouble(PrefUtils.parseCal(2, prefs, gui)) * Math.pow(angle, 2)
+              + Double.parseDouble(PrefUtils.parseCal(1, prefs, gui)) * angle
+              + Double.parseDouble(PrefUtils.parseCal(0, prefs, gui)));
       int pos = Math.round((float) tempPos);
       return pos;
    }
@@ -64,19 +65,19 @@ public class SAIMCommon {
            throws Exception {
       
       CMMCore core = gui.getMMCore();
-      double startAngle = Double.parseDouble(prefs.get(PrefStrings.STARTANGLE, "0.0"));
+      double startAngle = Double.parseDouble(prefs.get(PrefUtils.STARTANGLE, "0.0"));
       if (startAngle > 0) {
          throw new SAIMException ("Start angle should be <= 0");
       }
-      double angleStepSize = prefs.getDouble(PrefStrings.ANGLESTEPSIZE, 0);
-      boolean doubleZero = Boolean.parseBoolean(prefs.get(PrefStrings.DOUBLEZERO, ""));
+      double angleStepSize = prefs.getDouble(PrefUtils.ANGLESTEPSIZE, 0);
+      boolean doubleZero = Boolean.parseBoolean(prefs.get(PrefUtils.DOUBLEZERO, ""));
       if (startAngle % angleStepSize != 0) {
          throw new SAIMException("Start angle is not divisible by the angle step size");
       }
       
       // Set these variables to the correct values and leave
-      final String deviceName = prefs.get(PrefStrings.TIRFDEVICE, "");
-      final String propName = prefs.get(PrefStrings.TIRFPROP, "");
+      final String deviceName = prefs.get(PrefUtils.TIRFDEVICE, "");
+      final String propName = prefs.get(PrefUtils.TIRFPROP, "");
 
       // Usually no need to edit below this line
       double tempnrAngles = Math.abs(startAngle) * 2 / angleStepSize;
@@ -95,7 +96,7 @@ public class SAIMCommon {
       boolean doubled = false;
       int frameNr = 0;
       for (double angle = startAngle; angle <= -startAngle; angle += angleStepSize) {
-         double pos = SAIMCommon.tirfPosFromAngle(prefs, angle);
+         double pos = SAIMCommon.tirfPosFromAngle(prefs, gui, angle);
          gui.message("Angle: " + Double.toString(angle) + ", position: " + Double.toString(pos));
          core.setProperty(deviceName, propName, pos);
          core.waitForDevice(deviceName);

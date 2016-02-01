@@ -102,7 +102,7 @@ public class FlatFieldPanel extends JPanel {
         setupPanel.add(new JLabel("Start Angle:"));
         startAngleField_ = new JTextField("");
         GuiUtils.setTextAttributes(startAngleField_, componentSize);
-        GuiUtils.tieTextFieldToPrefs(prefs, startAngleField_, PrefStrings.STARTANGLE);
+        GuiUtils.tieTextFieldToPrefs(prefs, startAngleField_, PrefUtils.STARTANGLE);
         setupPanel.add(startAngleField_, "span, growx, wrap");
         
         // set angle step size
@@ -111,7 +111,7 @@ public class FlatFieldPanel extends JPanel {
         angleStepSizeSpinner_.addChangeListener(new ChangeListener() {
             @Override
             public void stateChanged(ChangeEvent e) {
-                prefs_.putDouble(PrefStrings.ANGLESTEPSIZE, (Double) angleStepSizeSpinner_.getValue());
+                prefs_.putDouble(PrefUtils.ANGLESTEPSIZE, (Double) angleStepSizeSpinner_.getValue());
             }
         });
         setupPanel.add(angleStepSizeSpinner_, "span, growx, wrap");
@@ -125,9 +125,9 @@ public class FlatFieldPanel extends JPanel {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (doubleZeroCheckBox_.isSelected()) {
-                    prefs_.putBoolean(PrefStrings.DOUBLEZERO, true);
+                    prefs_.putBoolean(PrefUtils.DOUBLEZERO, true);
                 } else {
-                    prefs_.putBoolean(PrefStrings.DOUBLEZERO, false);
+                    prefs_.putBoolean(PrefUtils.DOUBLEZERO, false);
                 }
             }
         });
@@ -143,28 +143,28 @@ public class FlatFieldPanel extends JPanel {
         calPanel_.add(new JLabel("<html>x<sup>3</sup>: </html>"));
         coeff3Field_ = new JTextField("");
         GuiUtils.setTextAttributes(coeff3Field_, componentSize);
-        GuiUtils.tieTextFieldToPrefs(prefs, coeff3Field_, PrefStrings.COEFF3);
+        GuiUtils.tieTextFieldToPrefs(prefs, coeff3Field_, PrefUtils.parseCal(3, prefs_, gui_));
         calPanel_.add(coeff3Field_, "span, center, wrap");
 
         //x2 coefficient
         calPanel_.add(new JLabel("<html>x<sup>2</sup>: </html>"));
         coeff2Field_ = new JTextField("");
         GuiUtils.setTextAttributes(coeff2Field_, componentSize);
-        GuiUtils.tieTextFieldToPrefs(prefs, coeff2Field_, PrefStrings.COEFF2);
+        GuiUtils.tieTextFieldToPrefs(prefs, coeff2Field_, PrefUtils.parseCal(2, prefs_, gui_));
         calPanel_.add(coeff2Field_, "span, center, wrap");
 
         //x coefficient
         calPanel_.add(new JLabel("x: "));
         coeff1Field_ = new JTextField("");
         GuiUtils.setTextAttributes(coeff1Field_, componentSize);
-        GuiUtils.tieTextFieldToPrefs(prefs, coeff1Field_, PrefStrings.COEFF1);
+        GuiUtils.tieTextFieldToPrefs(prefs, coeff1Field_, PrefUtils.parseCal(1, prefs_, gui_));
         calPanel_.add(coeff1Field_, "span, center, wrap");
 
         //x0 constant
         calPanel_.add(new JLabel("<html>x<sup>0</sup>: </html>"));
         coeff0Field_ = new JTextField("");
         GuiUtils.setTextAttributes(coeff0Field_, componentSize);
-        GuiUtils.tieTextFieldToPrefs(prefs, coeff0Field_, PrefStrings.COEFF0);
+        GuiUtils.tieTextFieldToPrefs(prefs, coeff0Field_, PrefUtils.parseCal(0, prefs_, gui_));
         calPanel_.add(coeff0Field_, "span, center, wrap");
 
         // FlatField Panel
@@ -180,16 +180,16 @@ public class FlatFieldPanel extends JPanel {
         backgroundFileChooser_.setTitle("Background Image");
         
         flatfieldPanel.add(new JLabel("Background Image"));
-        backgroundFileField_ = new JTextField(prefs_.get(PrefStrings.FFBACKGROUNDFILE, ""));
+        backgroundFileField_ = new JTextField(prefs_.get(PrefUtils.FFBACKGROUNDFILE, ""));
         GuiUtils.setTextAttributes(backgroundFileField_, componentSize);
         backgroundFileField_.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                prefs_.put(PrefStrings.FFBACKGROUNDFILE, backgroundFileField_.getText());
+                prefs_.put(PrefUtils.FFBACKGROUNDFILE, backgroundFileField_.getText());
             }
         });
         DropTarget dt = new DropTarget (backgroundFileField_, 
-                new DragFileToTextField(backgroundFileField_, false, prefs, PrefStrings.FFBACKGROUNDFILE));
+                new DragFileToTextField(backgroundFileField_, false, prefs, PrefUtils.FFBACKGROUNDFILE));
         flatfieldPanel.add(backgroundFileField_);
 
         // background file chooser button
@@ -202,7 +202,7 @@ public class FlatFieldPanel extends JPanel {
                String directory = backgroundFileChooser_.getDirectory();
                if (file != null && directory != null)
                   backgroundFileField_.setText(directory + File.separator + file);
-                  prefs_.put(PrefStrings.FFBACKGROUNDFILE, backgroundFileField_.getText());
+                  prefs_.put(PrefUtils.FFBACKGROUNDFILE, backgroundFileField_.getText());
             }
         });
         flatfieldPanel.add(backgroundFileButton_, "wrap");
@@ -219,9 +219,9 @@ public class FlatFieldPanel extends JPanel {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (ffShowImagesCheckBox_.isSelected()) {
-                    prefs_.putBoolean(PrefStrings.FFSHOWIMAGES, true);
+                    prefs_.putBoolean(PrefUtils.FFSHOWIMAGES, true);
                 } else {
-                    prefs_.putBoolean(PrefStrings.FFSHOWIMAGES, false);
+                    prefs_.putBoolean(PrefUtils.FFSHOWIMAGES, false);
                 }
             }
         });
@@ -379,13 +379,13 @@ public class FlatFieldPanel extends JPanel {
 
    // function to add preferences values to each field that uses them
    public final void updateGUIFromPrefs() {
-      angleStepSizeSpinner_.setValue(Double.parseDouble(prefs_.get(PrefStrings.ANGLESTEPSIZE, "")));
-      startAngleField_.setText(prefs_.get(PrefStrings.STARTANGLE, ""));
-      doubleZeroCheckBox_.setSelected(Boolean.parseBoolean(prefs_.get(PrefStrings.DOUBLEZERO, "")));
-      ffShowImagesCheckBox_.setSelected(Boolean.parseBoolean(prefs_.get(PrefStrings.FFSHOWIMAGES, "")));
-      coeff3Field_.setText(prefs_.get(PrefStrings.COEFF3, ""));
-      coeff2Field_.setText(prefs_.get(PrefStrings.COEFF2, ""));
-      coeff1Field_.setText(prefs_.get(PrefStrings.COEFF1, ""));
-      coeff0Field_.setText(prefs_.get(PrefStrings.COEFF0, ""));
+      angleStepSizeSpinner_.setValue(Double.parseDouble(prefs_.get(PrefUtils.ANGLESTEPSIZE, "")));
+      startAngleField_.setText(prefs_.get(PrefUtils.STARTANGLE, ""));
+      doubleZeroCheckBox_.setSelected(Boolean.parseBoolean(prefs_.get(PrefUtils.DOUBLEZERO, "")));
+      ffShowImagesCheckBox_.setSelected(Boolean.parseBoolean(prefs_.get(PrefUtils.FFSHOWIMAGES, "")));
+      coeff3Field_.setText(PrefUtils.parseCal(3, prefs_, gui_));
+      coeff2Field_.setText(PrefUtils.parseCal(2, prefs_, gui_));
+      coeff1Field_.setText(PrefUtils.parseCal(1, prefs_, gui_));
+      coeff0Field_.setText(PrefUtils.parseCal(0, prefs_, gui_));
    }
 }

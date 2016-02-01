@@ -72,6 +72,8 @@ public class CalibrationPanel extends JPanel {
     private final JTextField endMotorPosField_;
     private final JSpinner numberOfCalibrationStepsSpinner_;
     private final JToggleButton runButton_;
+    private final JLabel channelField_;
+    private final JButton updateChannelButton_;
     private final JLabel fitLabel_;
 
     public CalibrationPanel(ScriptInterface gui, Preferences prefs) throws Exception {
@@ -99,12 +101,12 @@ public class CalibrationPanel extends JPanel {
             serialPortBox_.addItem(serialPorts.get(i));
         }
         if (serialPorts.size() > 0) {
-            serialPortBox_.setSelectedItem(prefs_.get(PrefStrings.SERIALPORT, serialPorts.get(0)));
+            serialPortBox_.setSelectedItem(prefs_.get(PrefUtils.SERIALPORT, serialPorts.get(0)));
         }
         serialPortBox_.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent evt) {
-                prefs_.put(PrefStrings.SERIALPORT, (String) serialPortBox_.getSelectedItem());
+                prefs_.put(PrefUtils.SERIALPORT, (String) serialPortBox_.getSelectedItem());
             }
         });
         setupPanel.add(serialPortBox_, "wrap");
@@ -121,7 +123,7 @@ public class CalibrationPanel extends JPanel {
         for (int i = 0; i < stagePorts.size(); i++) {
             tirfDeviceBox_.addItem(stagePorts.get(i));
         }
-        tirfDeviceBox_.setSelectedItem(prefs_.get(PrefStrings.TIRFDEVICE, ""));
+        tirfDeviceBox_.setSelectedItem(prefs_.get(PrefUtils.TIRFDEVICE, ""));
         setupPanel.add(tirfDeviceBox_, "wrap");
 
         //Add TIRF motor position property name
@@ -130,11 +132,11 @@ public class CalibrationPanel extends JPanel {
         tirfPropBox_.setMaximumSize(componentSize);
         tirfPropBox_.setMinimumSize(componentSize);
         setupPanel.add(tirfPropBox_, "wrap");
-        
+
         tirfDeviceBox_.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent evt) {
-               updateDeviceGUI();
+                updateDeviceGUI();
             }
         });
 
@@ -142,7 +144,7 @@ public class CalibrationPanel extends JPanel {
         setupPanel.add(new JLabel("Set 0 Deg. Motor Position:"));
         zeroMotorPosField_ = new JTextField("0");
         setTextAttributes(zeroMotorPosField_, componentSize);
-        GuiUtils.tieTextFieldToPrefs(prefs_, zeroMotorPosField_, PrefStrings.ZEROMOTORPOS);
+        GuiUtils.tieTextFieldToPrefs(prefs_, zeroMotorPosField_, PrefUtils.ZEROMOTORPOS);
         setupPanel.add(zeroMotorPosField_, "span, growx, wrap");
 
         // calculate offset button
@@ -169,27 +171,27 @@ public class CalibrationPanel extends JPanel {
         calibratePanel.add(new JLabel("Refractive Index of Sample:"));
         sampleRIField_ = new JTextField("0");
         setTextAttributes(sampleRIField_, calBoxSize);
-        GuiUtils.tieTextFieldToPrefs(prefs_, sampleRIField_, PrefStrings.SAMPLERI);
+        GuiUtils.tieTextFieldToPrefs(prefs_, sampleRIField_, PrefUtils.SAMPLERI);
         calibratePanel.add(sampleRIField_, "span, growx, wrap");
 
         // immersion RI
         calibratePanel.add(new JLabel("Refractive Index of Immersion Medium:"));
         immersionRIField_ = new JTextField("0");
-        setTextAttributes(immersionRIField_, calBoxSize);        
-        GuiUtils.tieTextFieldToPrefs(prefs_, immersionRIField_, PrefStrings.IMMERSIONRI);
+        setTextAttributes(immersionRIField_, calBoxSize);
+        GuiUtils.tieTextFieldToPrefs(prefs_, immersionRIField_, PrefUtils.IMMERSIONRI);
         calibratePanel.add(immersionRIField_, "span, growx, wrap");
 
         // start motor position
         calibratePanel.add(new JLabel("Start Motor Position:"));
         startMotorPosField_ = new JTextField("0");
         setTextAttributes(startMotorPosField_, calBoxSize);
-        GuiUtils.tieTextFieldToPrefs(prefs_, startMotorPosField_, PrefStrings.STARTMOTORPOS);
+        GuiUtils.tieTextFieldToPrefs(prefs_, startMotorPosField_, PrefUtils.STARTMOTORPOS);
         calibratePanel.add(startMotorPosField_, "span, growx, wrap");
 
         calibratePanel.add(new JLabel("End Motor Position:"));
         endMotorPosField_ = new JTextField("0");
         setTextAttributes(endMotorPosField_, calBoxSize);
-        GuiUtils.tieTextFieldToPrefs(prefs_, endMotorPosField_, PrefStrings.ENDMOTORPOS);
+        GuiUtils.tieTextFieldToPrefs(prefs_, endMotorPosField_, PrefUtils.ENDMOTORPOS);
         calibratePanel.add(endMotorPosField_, "span, growx, wrap");
 
         calibratePanel.add(new JLabel("Number of Calibration Steps"));
@@ -197,7 +199,7 @@ public class CalibrationPanel extends JPanel {
         numberOfCalibrationStepsSpinner_.addChangeListener(new ChangeListener() {
             @Override
             public void stateChanged(ChangeEvent e) {
-                prefs_.putInt(PrefStrings.NUMCALSTEPS, (Integer) numberOfCalibrationStepsSpinner_.getValue());
+                prefs_.putInt(PrefUtils.NUMCALSTEPS, (Integer) numberOfCalibrationStepsSpinner_.getValue());
             }
         });
         calibratePanel.add(numberOfCalibrationStepsSpinner_, "span, growx, wrap");
@@ -217,6 +219,30 @@ public class CalibrationPanel extends JPanel {
         });
         calibratePanel.add(runButton_, "span 2, center, wrap");
 
+        //Current channel
+        channelField_ = new JLabel("Channel: ");
+        calibratePanel.add(channelField_);
+        updateChannelButton_ = new JButton("Update");
+        updateChannelButton_.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                try {
+
+                    core_.getCurrentConfig("Channel");
+                    prefs_.put(PrefUtils.CHANNEL, core_.getCurrentConfig("Channel"));
+                    channelField_.setText("Channel: " + prefs_.get(PrefUtils.CHANNEL, ""));
+                    String coeff3 = new DecimalFormat("0.###E0").format(Double.parseDouble(PrefUtils.parseCal(3, prefs_, gui_)));
+                    String coeff2 = new DecimalFormat("0.###E0").format(Double.parseDouble(PrefUtils.parseCal(2, prefs_, gui_)));
+                    String coeff1 = new DecimalFormat("0.###E0").format(Double.parseDouble(PrefUtils.parseCal(1, prefs_, gui_)));
+                    String offset = new DecimalFormat("#.##").format(Double.parseDouble(PrefUtils.parseCal(0, prefs_, gui_)));
+                    fitLabel_.setText("y = " + coeff3 + "* x^3 + " + coeff2 + "* x^2 + " + coeff1 + "x + " + offset);
+                } catch (Exception ex) {
+                    Logger.getLogger(AcquisitionPanel.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+        });
+        calibratePanel.add(updateChannelButton_, "span, center, wrap");
+
         fitLabel_ = new JLabel("Polynomial fit result: ");
         calibratePanel.add(fitLabel_, "span 2, wrap");
 
@@ -226,7 +252,6 @@ public class CalibrationPanel extends JPanel {
         updateGUIFromPrefs();
 
     }
-    
 
     /**
      * Utility function to set attributes for JTextFields in the dialog
@@ -238,8 +263,6 @@ public class CalibrationPanel extends JPanel {
         jtf.setHorizontalAlignment(JTextField.RIGHT);
         jtf.setMinimumSize(size);
     }
-    
-
 
     /**
      * User is supposed to direct the laser beam so that it goes straight up
@@ -248,7 +271,7 @@ public class CalibrationPanel extends JPanel {
      *
      */
     private void runOffsetCalc() {
-        final double zeroPos = Double.parseDouble(prefs_.get(PrefStrings.ZEROMOTORPOS, "0.0"));
+        final double zeroPos = Double.parseDouble(prefs_.get(PrefUtils.ZEROMOTORPOS, "0.0"));
         try {
             core_.setShutterOpen(true);
             Point2D.Double offsetVal = takeSnapshot(zeroPos, "Offset Scan");
@@ -286,40 +309,41 @@ public class CalibrationPanel extends JPanel {
             core_.setProperty(deviceName, propName, pos);
             core_.waitForDevice(deviceName);
             ij.IJ.log("Pos: " + pos);
-            
+
             // Read any junk remaining in serial port buffer
             CharVector tmp = core_.readFromSerialPort(port);
-            if (!tmp.isEmpty())
-               ij.IJ.log("Found " + tmp.size() + " characters in serial port buffer");
-            
+            if (!tmp.isEmpty()) {
+                ij.IJ.log("Found " + tmp.size() + " characters in serial port buffer");
+            }
+
             // log time for optimization purposes (can deleted afterwards)
             long startTime = System.currentTimeMillis();
-            
+
             //Send command to calibration device, record pixel intensity vales
             core_.setSerialPortCommand(port, "1", "");
-            
+
             // read binary data from Arduino
             byte[] buffer = new byte[6144];
             int charsRead = 0;
             long timeOut = System.currentTimeMillis() + 4500;
             while (charsRead < 6144 && System.currentTimeMillis() < timeOut) {
-               tmp = core_.readFromSerialPort(port);
-               for (int j = 0; j < tmp.size(); j++) {
-                  buffer[charsRead + j] = (byte) tmp.get(j);
-               }
-               charsRead += tmp.size();
+                tmp = core_.readFromSerialPort(port);
+                for (int j = 0; j < tmp.size(); j++) {
+                    buffer[charsRead + j] = (byte) tmp.get(j);
+                }
+                charsRead += tmp.size();
             }
             if (charsRead != 6144) {
-               throw new Exception ("Device did not send epected data: Received only " + charsRead + " bytes");
+                throw new Exception("Device did not send epected data: Received only " + charsRead + " bytes");
             }
             //ij.IJ.log("Device needed " + (System.currentTimeMillis() - startTime) + " ms to acquired and send the data");
             for (i = 0; i < 1536; i++) {
-              short dect1px = shortFrom2Bytes(buffer[i * 2], buffer[i * 2 + 1]);
-              short dect2px = shortFrom2Bytes(buffer[3072 + i * 2], 
-                      buffer[3072 + i * 2 + 1]);
-              dect1readings.add(i, dect1px);
-              dect2readings.add(i, dect2px);
-           }
+                short dect1px = shortFrom2Bytes(buffer[i * 2], buffer[i * 2 + 1]);
+                short dect2px = shortFrom2Bytes(buffer[3072 + i * 2],
+                        buffer[3072 + i * 2 + 1]);
+                dect1readings.add(i, dect1px);
+                dect2readings.add(i, dect2px);
+            }
 
             //Not needed for calibrator verson 3.0 and beyong
             //shuffle values of detector 1 to match physical layout of pixels
@@ -329,7 +353,6 @@ public class CalibrationPanel extends JPanel {
             //    Number pxvalue = dect1readings.getY(size - 1 - a);
             //    dect1readingsFlip.add(a, pxvalue);
             //}
-            
             //setup plotting detector readings
             PlotUtils myPlotter = new PlotUtils(prefs_);
             XYSeries[] toPlot = new XYSeries[4];
@@ -337,21 +360,21 @@ public class CalibrationPanel extends JPanel {
             toPlot[1] = dect2readings;
             boolean[] showShapes = {true, true, false, false};
 
-           //Fit result to a gaussian
-           double[] result1 = new double[4];
-           double[] result2 = new double[4];
-           toPlot[2] = new XYSeries(3);
-           toPlot[3] = new XYSeries(4);
-           try {
-              result1 = Fitter.fit(dect1readings, Fitter.FunctionType.Gaussian, null);
-              toPlot[2] = Fitter.getFittedSeries(dect1readings, Fitter.FunctionType.Gaussian, result1);
-              ij.IJ.log("Dectector 1 Mean: " + result1[1] + "\n");
-              result2 = Fitter.fit(dect2readings, Fitter.FunctionType.Gaussian, null);
-              toPlot[3] = Fitter.getFittedSeries(dect2readings, Fitter.FunctionType.Gaussian, result2);
-              ij.IJ.log("Dectector 2 Mean: " + result2[1] + "\n");
-           } catch (Exception ex) {
-              ij.IJ.log("Fit failed");
-           }
+            //Fit result to a gaussian
+            double[] result1 = new double[4];
+            double[] result2 = new double[4];
+            toPlot[2] = new XYSeries(3);
+            toPlot[3] = new XYSeries(4);
+            try {
+                result1 = Fitter.fit(dect1readings, Fitter.FunctionType.Gaussian, null);
+                toPlot[2] = Fitter.getFittedSeries(dect1readings, Fitter.FunctionType.Gaussian, result1);
+                ij.IJ.log("Dectector 1 Mean: " + result1[1] + "\n");
+                result2 = Fitter.fit(dect2readings, Fitter.FunctionType.Gaussian, null);
+                toPlot[3] = Fitter.getFittedSeries(dect2readings, Fitter.FunctionType.Gaussian, result2);
+                ij.IJ.log("Dectector 2 Mean: " + result2[1] + "\n");
+            } catch (Exception ex) {
+                ij.IJ.log("Fit failed");
+            }
 
             //Plot detector readings and gaussian fits
             myPlotter.plotDataN(plotTitle, toPlot, "Pixel", "Intensity", showShapes, "Pos: " + pos);
@@ -360,21 +383,20 @@ public class CalibrationPanel extends JPanel {
             return new Point2D.Double(result1[1], result2[1]);
 
         } catch (Exception ex) {
-           ex.printStackTrace();;
+            ex.printStackTrace();;
             ij.IJ.log(ex.getMessage() + "\nRan until # " + i);
         }
         return null;
     }
 
-    
-   private short shortFrom2Bytes(byte byte1, byte byte2) {
-      ByteBuffer bb = ByteBuffer.allocate(2);
-      bb.order(ByteOrder.LITTLE_ENDIAN);
-      bb.put(byte1);
-      bb.put(byte2);
-      return bb.getShort(0);
-   }
-    
+    private short shortFrom2Bytes(byte byte1, byte byte2) {
+        ByteBuffer bb = ByteBuffer.allocate(2);
+        bb.order(ByteOrder.LITTLE_ENDIAN);
+        bb.put(byte1);
+        bb.put(byte2);
+        return bb.getShort(0);
+    }
+
     /**
      * Runs the calibration itself in its own thread.
      *
@@ -390,27 +412,45 @@ public class CalibrationPanel extends JPanel {
 
             @Override
             public void run() {
-                // Editable variables for calibration
-               double startPosition;
-               String tmpString = "";
-               try {
-                  tmpString = prefs_.get(PrefStrings.STARTMOTORPOS, "0.0");
-                  startPosition = Double.parseDouble(tmpString);
-               } catch (NumberFormatException nfe) {
-                  ij.IJ.error("Failed to parse Start Motor Position \"" + tmpString +
-                          "\" to a numeric value");
-                  return;
-               }
-               double endPosition;
-               try {
-                  tmpString = prefs_.get(PrefStrings.ENDMOTORPOS, "0.0");
-                  endPosition = Double.parseDouble(tmpString);
-               } catch (NumberFormatException nfe) {
-                  ij.IJ.error("Failed to parse End Motor Position \"" + tmpString +
-                          "\" to a numeric value");
-                  return;
-               }
-                final int nrAngles = prefs_.getInt(PrefStrings.NUMCALSTEPS, 0);
+                //Check for channel group before running calibration
+                if (core_.getChannelGroup().equals("")) {
+                    ij.IJ.error("Set channel group in Multi-D Acquisition Panel");
+                    return;
+                }
+                //Check for offset before running calibration
+                Double detectorOffset;
+                try {
+                    Double tmp = Double.parseDouble(offsetLabel_.getText());
+                } catch (Exception e) {
+                    ij.IJ.error("Calculate offset before running calibration");
+                    return;
+                }
+                if ((offsetLabel_.getText()) != null) {
+                    detectorOffset = Double.parseDouble(offsetLabel_.getText());
+                } else {
+                    detectorOffset = 0.0;
+                }
+                // Parse editable variables for calibration
+                double startPosition;
+                String tmpString = "";
+                try {
+                    tmpString = prefs_.get(PrefUtils.STARTMOTORPOS, "0.0");
+                    startPosition = Double.parseDouble(tmpString);
+                } catch (NumberFormatException nfe) {
+                    ij.IJ.error("Failed to parse Start Motor Position \"" + tmpString
+                            + "\" to a numeric value");
+                    return;
+                }
+                double endPosition;
+                try {
+                    tmpString = prefs_.get(PrefUtils.ENDMOTORPOS, "0.0");
+                    endPosition = Double.parseDouble(tmpString);
+                } catch (NumberFormatException nfe) {
+                    ij.IJ.error("Failed to parse End Motor Position \"" + tmpString
+                            + "\" to a numeric value");
+                    return;
+                }
+                final int nrAngles = prefs_.getInt(PrefUtils.NUMCALSTEPS, 0);
                 final double angleStepSize = (endPosition - startPosition) / nrAngles;
                 int i = 0;
                 try {
@@ -432,13 +472,7 @@ public class CalibrationPanel extends JPanel {
                             pos = pos + angleStepSize;
                         }
                     }
-                    //Read offset if calculated
-                    Double detectorOffset;
-                    if ((offsetLabel_.getText()) != null) {
-                        detectorOffset = Double.parseDouble(offsetLabel_.getText());
-                    } else {
-                        detectorOffset = 0.0;
-                    }
+
                     //Determine angle of laser light at each motor position
                     XYSeries observedAngles = new XYSeries("angles", false, true);
                     for (int l = 0; l <= nrAngles; l++) {
@@ -453,8 +487,8 @@ public class CalibrationPanel extends JPanel {
                         //Snells law correction angle of laser light for refractive index 
                         //Refractive indeces: acrylic = 1.49, water = 1.33, user input = RI
                         //determine true angle coming out of objective (correct for acrylic)
-                        double immersionRI = Double.parseDouble(prefs_.get(PrefStrings.IMMERSIONRI, "1.33"));
-                        double sampleRI = Double.parseDouble(prefs_.get(PrefStrings.SAMPLERI, "1.33"));
+                        double immersionRI = Double.parseDouble(prefs_.get(PrefUtils.IMMERSIONRI, "1.33"));
+                        double sampleRI = Double.parseDouble(prefs_.get(PrefUtils.SAMPLERI, "1.33"));
                         Double firstCorrect = snellIt(observedAngle, 1.49, immersionRI);
                         //determine true angle hitting the sample (correct for water/buffer)
                         Double trueAngle = snellIt(firstCorrect, immersionRI, sampleRI);
@@ -468,16 +502,27 @@ public class CalibrationPanel extends JPanel {
                     toPlot[1] = Fitter.getFittedSeries(toPlot[0], Fitter.FunctionType.Pol3, calCurve);
                     boolean[] showShapes = {true, false};
                     myPlotter2.plotDataN("Calibration Curve", toPlot, "True Angle", "Position", showShapes, "");
-                    String coeff3 = new DecimalFormat("0.###E0").format(calCurve[3]);
-                    prefs_.put(PrefStrings.COEFF3, coeff3);
-                    String coeff2 = new DecimalFormat("0.###E0").format(calCurve[2]);
-                    prefs_.put(PrefStrings.COEFF2, coeff2);
-                    String coeff1 = new DecimalFormat("0.###E0").format(calCurve[1]);
-                    prefs_.put(PrefStrings.COEFF1, coeff1);
-                    String offset = new DecimalFormat("#.##").format(calCurve[0]);
-                    prefs_.put(PrefStrings.COEFF0, offset);
+                    String calString = java.util.Arrays.toString(calCurve);
+                    String chString = PrefUtils.channelCoeffKey(prefs_, gui_);
+                    prefs_.put(chString, calString);
+                    //Print cal as stored in preferences (for debugging)
+                    //ij.IJ.log(chString + prefs_.get(chString, ""));
+                    //Print parsed coeffs (for debugging)
+                    //ij.IJ.log(PrefUtils.parseCal(3, prefs_, gui_));
+                    //ij.IJ.log(PrefUtils.parseCal(2, prefs_, gui_));
+                    //ij.IJ.log(PrefUtils.parseCal(1, prefs_, gui_));
+                    //ij.IJ.log(PrefUtils.parseCal(0, prefs_, gui_));
+
+                    String coeff3 = new DecimalFormat("0.###E0").format(Double.parseDouble(PrefUtils.parseCal(3, prefs_, gui_)));
+                    String coeff2 = new DecimalFormat("0.###E0").format(Double.parseDouble(PrefUtils.parseCal(2, prefs_, gui_)));
+                    String coeff1 = new DecimalFormat("0.###E0").format(Double.parseDouble(PrefUtils.parseCal(1, prefs_, gui_)));
+                    String offset = new DecimalFormat("#.##").format(Double.parseDouble(PrefUtils.parseCal(0, prefs_, gui_)));
+
+                    prefs_.put(PrefUtils.CHANNEL, core_.getCurrentConfig("Channel"));
+                    channelField_.setText("Channel: " + prefs_.get(PrefUtils.CHANNEL, ""));
                     fitLabel_.setText("y = " + coeff3 + "* x^3 + " + coeff2 + "* x^2 + " + coeff1 + "x + " + offset);
-                    ij.IJ.log("y = " + calCurve[3] + "* x^3 + " + calCurve[2] + "* x^2 + " + calCurve[1] + "x + " + calCurve[0]);
+                    ij.IJ.log("Channel: " + core_.getCurrentConfig("Channel"));
+                    ij.IJ.log("y = " + PrefUtils.parseCal(3, prefs_, gui_) + "* x^3 + " + PrefUtils.parseCal(2, prefs_, gui_) + "* x^2 + " + PrefUtils.parseCal(1, prefs_, gui_) + "x + " + PrefUtils.parseCal(0, prefs_, gui_));
 
                 } catch (Exception ex) {
                     ij.IJ.log(ex.getMessage() + "\nRan until # " + i);
@@ -501,60 +546,60 @@ public class CalibrationPanel extends JPanel {
     private static double snellIt(double startAngle, double startRI, double endRI) {
         Double trueAngle = Math.toDegrees(Math.asin((startRI / endRI) * Math.sin(Math.toRadians(startAngle))));
         return trueAngle;
-    }    
+    }
 
     //function to update panel with stored preferences values
     public final void updateGUIFromPrefs() {
-        zeroMotorPosField_.setText(prefs_.get(PrefStrings.ZEROMOTORPOS, "0.0"));
-        serialPortBox_.setSelectedItem(prefs_.get(PrefStrings.SERIALPORT, ""));
-        tirfDeviceBox_.setSelectedItem(prefs_.get(PrefStrings.TIRFDEVICE, ""));
+        zeroMotorPosField_.setText(prefs_.get(PrefUtils.ZEROMOTORPOS, "0.0"));
+        serialPortBox_.setSelectedItem(prefs_.get(PrefUtils.SERIALPORT, ""));
+        tirfDeviceBox_.setSelectedItem(prefs_.get(PrefUtils.TIRFDEVICE, ""));
         updateDeviceGUI();
         //tirfPropBox_.setSelectedItem(prefs_.get(PrefStrings.TIRFPROP, ""));
-        sampleRIField_.setText(prefs_.get(PrefStrings.SAMPLERI, ""));
-        immersionRIField_.setText(prefs_.get(PrefStrings.IMMERSIONRI, ""));
-        startMotorPosField_.setText(prefs_.get(PrefStrings.STARTMOTORPOS, ""));
-        endMotorPosField_.setText(prefs_.get(PrefStrings.ENDMOTORPOS, ""));
+        sampleRIField_.setText(prefs_.get(PrefUtils.SAMPLERI, ""));
+        immersionRIField_.setText(prefs_.get(PrefUtils.IMMERSIONRI, ""));
+        startMotorPosField_.setText(prefs_.get(PrefUtils.STARTMOTORPOS, ""));
+        endMotorPosField_.setText(prefs_.get(PrefUtils.ENDMOTORPOS, ""));
         numberOfCalibrationStepsSpinner_.setValue(Integer.parseInt(
-                prefs_.get(PrefStrings.NUMCALSTEPS, "1")));
+                prefs_.get(PrefUtils.NUMCALSTEPS, "1")));
     }
-    
-   /**
-    * Updates the device property dropdown box when the TIRF motor device dropdown
-    * changes
-    */     
-   private void updateDeviceGUI() {
-      prefs_.put(PrefStrings.TIRFDEVICE, (String) tirfDeviceBox_.getSelectedItem());
-      try {
-         StrVector deviceProps = core_.getDevicePropertyNames(prefs_.get(PrefStrings.TIRFDEVICE, ""));
-         DefaultComboBoxModel model = (DefaultComboBoxModel) tirfPropBox_.getModel();
-         if (model != null) {
-            for (ActionListener al : tirfPropBox_.getActionListeners()) {
-             tirfPropBox_.removeActionListener(al);
-            }
-            model.removeAllElements();
-            for (int i = 0; i < deviceProps.size(); i++) {
-               model.addElement(deviceProps.get(i));
-            }
-            String propBoxItem = prefs_.get(PrefStrings.TIRFPROP, "");
-            tirfPropBox_.setSelectedItem(propBoxItem);
-            ActionListener[] als = tirfPropBox_.getActionListeners();
-            if (als.length == 0) {
-               tirfPropBox_.addActionListener(new ActionListener() {
-                  @Override
-                  public void actionPerformed(ActionEvent evt) {
-                     Object selectedItem = tirfPropBox_.getSelectedItem();
-                     if (selectedItem != null) {
-                        prefs_.put(PrefStrings.TIRFPROP, (String) selectedItem);
-                     }
 
-                  }
-               });
-            }
-         }
-      } catch (Exception ex) {
-         Logger.getLogger(CalibrationPanel.class.getName()).log(Level.SEVERE, null, ex);
-      }
+    /**
+     * Updates the device property dropdown box when the TIRF motor device
+     * dropdown changes
+     */
+    private void updateDeviceGUI() {
+        prefs_.put(PrefUtils.TIRFDEVICE, (String) tirfDeviceBox_.getSelectedItem());
+        try {
+            StrVector deviceProps = core_.getDevicePropertyNames(prefs_.get(PrefUtils.TIRFDEVICE, ""));
+            DefaultComboBoxModel model = (DefaultComboBoxModel) tirfPropBox_.getModel();
+            if (model != null) {
+                for (ActionListener al : tirfPropBox_.getActionListeners()) {
+                    tirfPropBox_.removeActionListener(al);
+                }
+                model.removeAllElements();
+                for (int i = 0; i < deviceProps.size(); i++) {
+                    model.addElement(deviceProps.get(i));
+                }
+                String propBoxItem = prefs_.get(PrefUtils.TIRFPROP, "");
+                tirfPropBox_.setSelectedItem(propBoxItem);
+                ActionListener[] als = tirfPropBox_.getActionListeners();
+                if (als.length == 0) {
+                    tirfPropBox_.addActionListener(new ActionListener() {
+                        @Override
+                        public void actionPerformed(ActionEvent evt) {
+                            Object selectedItem = tirfPropBox_.getSelectedItem();
+                            if (selectedItem != null) {
+                                prefs_.put(PrefUtils.TIRFPROP, (String) selectedItem);
+                            }
 
-   }
+                        }
+                    });
+                }
+            }
+        } catch (Exception ex) {
+            Logger.getLogger(CalibrationPanel.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+    }
 
 }
