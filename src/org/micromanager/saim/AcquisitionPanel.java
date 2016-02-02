@@ -89,7 +89,7 @@ public class AcquisitionPanel extends JPanel {
       JPanel setupPanel = new JPanel(new MigLayout(
               "", ""));
       setupPanel.setBorder(GuiUtils.makeTitledBorder("Setup"));
-      final Dimension componentSize = new Dimension(150, 30);
+      final Dimension componentSize = new Dimension(180, 30);
 
 
       // set start angle
@@ -133,7 +133,6 @@ public class AcquisitionPanel extends JPanel {
       calPanel_.setBorder(GuiUtils.makeTitledBorder("Calibration Values"));
 
       //Current channel
-      calPanel_.add(new JLabel("Channel: "));
       channelField_ = new JLabel("");
       calPanel_.add(channelField_);
       updateChannelButton_ = new JButton("Update");
@@ -322,12 +321,12 @@ public class AcquisitionPanel extends JPanel {
            saveImagesCheckBox_.setSelected(Boolean.parseBoolean(prefs_.get(PrefUtils.ACQSAVEIMAGES, "")));
            acqdirRootField_.setText(prefs_.get(PrefUtils.ACQDIRROOT, ""));
            acqnamePrefixField_.setText(prefs_.get(PrefUtils.ACQNAMEPREFIX, ""));
+           String channelGroup = core_.getChannelGroup();
+           prefs_.put(PrefUtils.CHANNEL, channelGroup + ": " + core_.getCurrentConfig(channelGroup));
            coeff3Field_.setText(PrefUtils.parseCal(3, prefs_, gui_));
            coeff2Field_.setText(PrefUtils.parseCal(2, prefs_, gui_));
            coeff1Field_.setText(PrefUtils.parseCal(1, prefs_, gui_));
            coeff0Field_.setText(PrefUtils.parseCal(0, prefs_, gui_));
-           core_.getCurrentConfig("Channel");
-           prefs_.put(PrefUtils.CHANNEL, core_.getCurrentConfig("Channel"));
            channelField_.setText(prefs_.get(PrefUtils.CHANNEL,""));
        } catch (Exception ex) {
            Logger.getLogger(AcquisitionPanel.class.getName()).log(Level.SEVERE, null, ex);

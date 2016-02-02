@@ -47,6 +47,7 @@ import mmcorej.StrVector;
 import net.miginfocom.swing.MigLayout;
 import org.jfree.data.xy.XYSeries;
 import org.micromanager.api.ScriptInterface;
+import org.micromanager.saim.exceptions.SAIMException;
 import org.micromanager.saim.fit.Fitter;
 import org.micromanager.saim.gui.GuiUtils;
 import org.micromanager.saim.plot.PlotUtils;
@@ -226,19 +227,7 @@ public class CalibrationPanel extends JPanel {
         updateChannelButton_.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                try {
-
-                    core_.getCurrentConfig("Channel");
-                    prefs_.put(PrefUtils.CHANNEL, core_.getCurrentConfig("Channel"));
-                    channelField_.setText("Channel: " + prefs_.get(PrefUtils.CHANNEL, ""));
-                    String coeff3 = new DecimalFormat("0.###E0").format(Double.parseDouble(PrefUtils.parseCal(3, prefs_, gui_)));
-                    String coeff2 = new DecimalFormat("0.###E0").format(Double.parseDouble(PrefUtils.parseCal(2, prefs_, gui_)));
-                    String coeff1 = new DecimalFormat("0.###E0").format(Double.parseDouble(PrefUtils.parseCal(1, prefs_, gui_)));
-                    String offset = new DecimalFormat("#.##").format(Double.parseDouble(PrefUtils.parseCal(0, prefs_, gui_)));
-                    fitLabel_.setText("y = " + coeff3 + "* x^3 + " + coeff2 + "* x^2 + " + coeff1 + "x + " + offset);
-                } catch (Exception ex) {
-                    Logger.getLogger(AcquisitionPanel.class.getName()).log(Level.SEVERE, null, ex);
-                }
+                updateChannelCalibration();
             }
         });
         calibratePanel.add(updateChannelButton_, "span, center, wrap");
@@ -250,8 +239,10 @@ public class CalibrationPanel extends JPanel {
         add(setupPanel, "span, growx, wrap");
         add(calibratePanel, "span, growx, wrap");
         updateGUIFromPrefs();
+        updateChannelCalibration();
 
     }
+    
 
     /**
      * Utility function to set attributes for JTextFields in the dialog
@@ -262,6 +253,26 @@ public class CalibrationPanel extends JPanel {
     private void setTextAttributes(JTextField jtf, Dimension size) {
         jtf.setHorizontalAlignment(JTextField.RIGHT);
         jtf.setMinimumSize(size);
+    }
+
+    private void updateChannelCalibration() {
+        try {
+            String channelGroup = core_.getChannelGroup();
+            prefs_.put(PrefUtils.CHANNEL, channelGroup + ": " + core_.getCurrentConfig(channelGroup));
+            channelField_.setText(prefs_.get(PrefUtils.CHANNEL, ""));
+            String coeff3 = new DecimalFormat("0.###E0").format(
+                    Double.parseDouble(PrefUtils.parseCal(3, prefs_, gui_)));
+            String coeff2 = new DecimalFormat("0.###E0").format(
+                    Double.parseDouble(PrefUtils.parseCal(2, prefs_, gui_)));
+            String coeff1 = new DecimalFormat("0.###E0").format(
+                    Double.parseDouble(PrefUtils.parseCal(1, prefs_, gui_)));
+            String offset = new DecimalFormat("#.##").format(
+                    Double.parseDouble(PrefUtils.parseCal(0, prefs_, gui_)));
+            fitLabel_.setText("y = " + coeff3 + "* x^3 + " + coeff2 + "* x^2 + " + coeff1 + "x + " + offset);
+        } catch (Exception ex) {
+            ij.IJ.log(ex.getMessage());
+            fitLabel_.setText("Uncalibrated");
+        }
     }
 
     /**
@@ -412,48 +423,48 @@ public class CalibrationPanel extends JPanel {
 
             @Override
             public void run() {
-                //Check for channel group before running calibration
-                if (core_.getChannelGroup().equals("")) {
-                    ij.IJ.error("Set channel group in Multi-D Acquisition Panel");
-                    return;
-                }
-                //Check for offset before running calibration
-                Double detectorOffset;
+
                 try {
-                    Double tmp = Double.parseDouble(offsetLabel_.getText());
-                } catch (Exception e) {
-                    ij.IJ.error("Calculate offset before running calibration");
-                    return;
-                }
-                if ((offsetLabel_.getText()) != null) {
-                    detectorOffset = Double.parseDouble(offsetLabel_.getText());
-                } else {
-                    detectorOffset = 0.0;
-                }
-                // Parse editable variables for calibration
-                double startPosition;
-                String tmpString = "";
-                try {
-                    tmpString = prefs_.get(PrefUtils.STARTMOTORPOS, "0.0");
-                    startPosition = Double.parseDouble(tmpString);
-                } catch (NumberFormatException nfe) {
-                    ij.IJ.error("Failed to parse Start Motor Position \"" + tmpString
-                            + "\" to a numeric value");
-                    return;
-                }
-                double endPosition;
-                try {
-                    tmpString = prefs_.get(PrefUtils.ENDMOTORPOS, "0.0");
-                    endPosition = Double.parseDouble(tmpString);
-                } catch (NumberFormatException nfe) {
-                    ij.IJ.error("Failed to parse End Motor Position \"" + tmpString
-                            + "\" to a numeric value");
-                    return;
-                }
-                final int nrAngles = prefs_.getInt(PrefUtils.NUMCALSTEPS, 0);
-                final double angleStepSize = (endPosition - startPosition) / nrAngles;
-                int i = 0;
-                try {
+                    //Check for channel group before running calibration
+                    if (core_.getChannelGroup().equals("")) {
+                        ij.IJ.error("Set channel group in Multi-D Acquisition Panel");
+                        throw new SAIMException("Channel group is not defined");
+                    }
+                    //Check for offset before running calibration
+                    Double detectorOffset;
+                    try {
+                        Double tmp = Double.parseDouble(offsetLabel_.getText());
+                    } catch (Exception e) {
+                        ij.IJ.error("Calculate offset before running calibration");
+                        throw new SAIMException("Offset was not set");
+                    }
+                    if ((offsetLabel_.getText()) != null) {
+                        detectorOffset = Double.parseDouble(offsetLabel_.getText());
+                    } else {
+                        detectorOffset = 0.0;
+                    }
+                    // Parse editable variables for calibration
+                    double startPosition;
+                    String tmpString = "";
+                    try {
+                        tmpString = prefs_.get(PrefUtils.STARTMOTORPOS, "0.0");
+                        startPosition = Double.parseDouble(tmpString);
+                    } catch (NumberFormatException nfe) {
+                        ij.IJ.error("Failed to parse Start Motor Position \"" + tmpString
+                                + "\" to a numeric value");
+                        throw new SAIMException("Failure parsing start motor position");
+                    }
+                    double endPosition;
+                    try {
+                        tmpString = prefs_.get(PrefUtils.ENDMOTORPOS, "0.0");
+                        endPosition = Double.parseDouble(tmpString);
+                    } catch (NumberFormatException nfe) {
+                        ij.IJ.error("Failed to parse End Motor Position \"" + tmpString
+                                + "\" to a numeric value");
+                        throw new SAIMException("Failure parsing end motor position");
+                    }
+                    final int nrAngles = prefs_.getInt(PrefUtils.NUMCALSTEPS, 0);
+                    final double angleStepSize = (endPosition - startPosition) / nrAngles;
                     //Take image of laser position
                     XYSeries dect1gaussianMeans = new XYSeries(new Double(nrAngles), false, true);
                     XYSeries dect2gaussianMeans = new XYSeries(new Double(nrAngles), false, true);
@@ -525,7 +536,7 @@ public class CalibrationPanel extends JPanel {
                     ij.IJ.log("y = " + PrefUtils.parseCal(3, prefs_, gui_) + "* x^3 + " + PrefUtils.parseCal(2, prefs_, gui_) + "* x^2 + " + PrefUtils.parseCal(1, prefs_, gui_) + "x + " + PrefUtils.parseCal(0, prefs_, gui_));
 
                 } catch (Exception ex) {
-                    ij.IJ.log(ex.getMessage() + "\nRan until # " + i);
+                    ij.IJ.log(ex.getMessage());
                 } finally {
                     try {
                         core_.setShutterOpen(false);
@@ -561,6 +572,7 @@ public class CalibrationPanel extends JPanel {
         endMotorPosField_.setText(prefs_.get(PrefUtils.ENDMOTORPOS, ""));
         numberOfCalibrationStepsSpinner_.setValue(Integer.parseInt(
                 prefs_.get(PrefUtils.NUMCALSTEPS, "1")));
+        updateChannelCalibration();
     }
 
     /**
