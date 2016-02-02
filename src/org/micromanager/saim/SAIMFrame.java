@@ -27,7 +27,6 @@
  */
 package org.micromanager.saim;
 
-import mmcorej.CMMCore;
 import java.util.prefs.Preferences;
 import org.micromanager.api.ScriptInterface;
 import javax.swing.JTabbedPane;
@@ -43,7 +42,6 @@ import org.micromanager.utils.MMFrame;
 public class SAIMFrame extends MMFrame {
 
     private final ScriptInterface gui_;
-    private final CMMCore core_;
     private final Preferences prefs_;
 
     private final JTabbedPane tabbedPane_;
@@ -56,7 +54,6 @@ public class SAIMFrame extends MMFrame {
     */
    public SAIMFrame(ScriptInterface gui) throws Exception {
       gui_ = gui;
-      core_ = gui_.getMMCore();
       loadAndRestorePosition(100, 100, 200, 200);
       prefs_ = Preferences.userNodeForPackage(this.getClass());
 
