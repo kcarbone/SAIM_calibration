@@ -278,7 +278,7 @@ public class CalibrationPanel extends JPanel {
                     Double.parseDouble(PrefUtils.parseCal(0, prefs_, gui_)));
             fitLabel_.setText("y = " + coeff3 + "* x^3 + " + coeff2 + "* x^2 + " + coeff1 + "x + " + offset);
         } catch (Exception ex) {
-            ij.IJ.log(ex.getMessage());
+            //ij.IJ.log(ex.getMessage());
             fitLabel_.setText("Uncalibrated");
         }
     }
@@ -544,10 +544,9 @@ public class CalibrationPanel extends JPanel {
                     String coeff2 = new DecimalFormat("0.###E0").format(Double.parseDouble(PrefUtils.parseCal(2, prefs_, gui_)));
                     String coeff1 = new DecimalFormat("0.###E0").format(Double.parseDouble(PrefUtils.parseCal(1, prefs_, gui_)));
                     String offset = new DecimalFormat("#.##").format(Double.parseDouble(PrefUtils.parseCal(0, prefs_, gui_)));
+                    
+                    updateChannelCalibration();
 
-                    prefs_.put(PrefUtils.CHANNEL, core_.getCurrentConfig("Channel"));
-                    channelField_.setText("Channel: " + prefs_.get(PrefUtils.CHANNEL, ""));
-                    fitLabel_.setText("y = " + coeff3 + "* x^3 + " + coeff2 + "* x^2 + " + coeff1 + "x + " + offset);
                     ij.IJ.log("Channel: " + core_.getCurrentConfig("Channel"));
                     ij.IJ.log("y = " + PrefUtils.parseCal(3, prefs_, gui_) + "* x^3 + " + PrefUtils.parseCal(2, prefs_, gui_) + "* x^2 + " + PrefUtils.parseCal(1, prefs_, gui_) + "x + " + PrefUtils.parseCal(0, prefs_, gui_));
 
