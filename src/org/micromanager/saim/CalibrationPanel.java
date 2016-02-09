@@ -62,11 +62,11 @@ public class CalibrationPanel extends JPanel {
     private final Preferences prefs_;
     private final CMMCore core_;
 
-    private final JTextField zeroMotorPosField_;
+    //private final JTextField zeroMotorPosField_;
     private final JComboBox serialPortBox_;
     private final JComboBox tirfDeviceBox_;
     private final JComboBox tirfPropBox_;
-    private final JLabel offsetLabel_;
+    //private final JLabel offsetLabel_;
     private final JTextField sampleRIField_;
     private final JTextField immersionRIField_;
     private final JTextField startMotorPosField_;
@@ -142,60 +142,60 @@ public class CalibrationPanel extends JPanel {
         });
 
         // set zero motor position for calculating offset
-        setupPanel.add(new JLabel("Set 0 Deg. Motor Position:"));
-        zeroMotorPosField_ = new JTextField("0");
-        setTextAttributes(zeroMotorPosField_, componentSize);
-        GuiUtils.tieTextFieldToPrefs(prefs_, zeroMotorPosField_, PrefUtils.ZEROMOTORPOS);
-        setupPanel.add(zeroMotorPosField_, "span, growx, wrap");
+        //setupPanel.add(new JLabel("Set 0 Deg. Motor Position:"));
+        //zeroMotorPosField_ = new JTextField("0");
+        //setTextAttributes(zeroMotorPosField_, componentSize);
+        //GuiUtils.tieTextFieldToPrefs(prefs_, zeroMotorPosField_, PrefUtils.ZEROMOTORPOS);
+        //setupPanel.add(zeroMotorPosField_, "span, growx, wrap");
 
         // calculate offset button
-        JButton calcOffsetButton = new JButton("Calculate Offset");
-        calcOffsetButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                runOffsetCalc();
-            }
-        });
-        setupPanel.add(calcOffsetButton, "span 2, center, wrap");
+        //JButton calcOffsetButton = new JButton("Calculate Offset");
+        //calcOffsetButton.addActionListener(new ActionListener() {
+        //    @Override
+        //    public void actionPerformed(ActionEvent e) {
+        //        runOffsetCalc();
+        //    }
+        //});
+        //setupPanel.add(calcOffsetButton, "span 2, center, wrap");
 
-        setupPanel.add(new JLabel("Detector Offset:"));
-        offsetLabel_ = new JLabel("");
-        setupPanel.add(offsetLabel_, "wrap");
+        //setupPanel.add(new JLabel("Detector Offset:"));
+        //offsetLabel_ = new JLabel("");
+        //setupPanel.add(offsetLabel_, "wrap");
 
         // Calibrate Panel
-        JPanel calibratePanel = new JPanel(new MigLayout(
+        JPanel runPanel = new JPanel(new MigLayout(
                 "", ""));
-        calibratePanel.setBorder(GuiUtils.makeTitledBorder("Calibrate"));
+        runPanel.setBorder(GuiUtils.makeTitledBorder("Run"));
         final Dimension calBoxSize = new Dimension(130, 30);
 
         // sampleRI
-        calibratePanel.add(new JLabel("Refractive Index of Sample:"));
+        runPanel.add(new JLabel("Refractive Index of Sample:"));
         sampleRIField_ = new JTextField("0");
         setTextAttributes(sampleRIField_, calBoxSize);
         GuiUtils.tieTextFieldToPrefs(prefs_, sampleRIField_, PrefUtils.SAMPLERI);
-        calibratePanel.add(sampleRIField_, "span, growx, wrap");
+        runPanel.add(sampleRIField_, "span, growx, wrap");
 
         // immersion RI
-        calibratePanel.add(new JLabel("Refractive Index of Immersion Medium:"));
+        runPanel.add(new JLabel("Refractive Index of Immersion Medium:"));
         immersionRIField_ = new JTextField("0");
         setTextAttributes(immersionRIField_, calBoxSize);
         GuiUtils.tieTextFieldToPrefs(prefs_, immersionRIField_, PrefUtils.IMMERSIONRI);
-        calibratePanel.add(immersionRIField_, "span, growx, wrap");
+        runPanel.add(immersionRIField_, "span, growx, wrap");
 
         // start motor position
-        calibratePanel.add(new JLabel("Start Motor Position:"));
+        runPanel.add(new JLabel("Start Motor Position:"));
         startMotorPosField_ = new JTextField("0");
         setTextAttributes(startMotorPosField_, calBoxSize);
         GuiUtils.tieTextFieldToPrefs(prefs_, startMotorPosField_, PrefUtils.STARTMOTORPOS);
-        calibratePanel.add(startMotorPosField_, "span, growx, wrap");
+        runPanel.add(startMotorPosField_, "span, growx, wrap");
 
-        calibratePanel.add(new JLabel("End Motor Position:"));
+        runPanel.add(new JLabel("End Motor Position:"));
         endMotorPosField_ = new JTextField("0");
         setTextAttributes(endMotorPosField_, calBoxSize);
         GuiUtils.tieTextFieldToPrefs(prefs_, endMotorPosField_, PrefUtils.ENDMOTORPOS);
-        calibratePanel.add(endMotorPosField_, "span, growx, wrap");
+        runPanel.add(endMotorPosField_, "span, growx, wrap");
 
-        calibratePanel.add(new JLabel("Number of Calibration Steps"));
+        runPanel.add(new JLabel("Number of Calibration Steps"));
         numberOfCalibrationStepsSpinner_ = new JSpinner(new SpinnerNumberModel(100, 0, 400, 1));
         numberOfCalibrationStepsSpinner_.addChangeListener(new ChangeListener() {
             @Override
@@ -203,7 +203,7 @@ public class CalibrationPanel extends JPanel {
                 prefs_.putInt(PrefUtils.NUMCALSTEPS, (Integer) numberOfCalibrationStepsSpinner_.getValue());
             }
         });
-        calibratePanel.add(numberOfCalibrationStepsSpinner_, "span, growx, wrap");
+        runPanel.add(numberOfCalibrationStepsSpinner_, "span, growx, wrap");
 
         runButton_ = new JToggleButton("Run Calibration");
         runButton_.addActionListener(new ActionListener() {
@@ -218,11 +218,17 @@ public class CalibrationPanel extends JPanel {
                 }
             }
         });
-        calibratePanel.add(runButton_, "span 2, center, wrap");
+        runPanel.add(runButton_, "span 2, center, wrap");
 
+        
+        // Calibration Panel
+        JPanel calibrationPanel = new JPanel(new MigLayout(
+                "", ""));
+        calibrationPanel.setBorder(GuiUtils.makeTitledBorder("Current Calibration"));
+        
         //Current channel
         channelField_ = new JLabel("Channel: ");
-        calibratePanel.add(channelField_);
+        calibrationPanel.add(channelField_);
         updateChannelButton_ = new JButton("Update");
         updateChannelButton_.addActionListener(new ActionListener() {
             @Override
@@ -230,14 +236,15 @@ public class CalibrationPanel extends JPanel {
                 updateChannelCalibration();
             }
         });
-        calibratePanel.add(updateChannelButton_, "span, center, wrap");
+        calibrationPanel.add(updateChannelButton_, "span, center, wrap");
 
         fitLabel_ = new JLabel("Polynomial fit result: ");
-        calibratePanel.add(fitLabel_, "span 2, wrap");
+        calibrationPanel.add(fitLabel_, "span 2, wrap");
 
         // Combine them all
         add(setupPanel, "span, growx, wrap");
-        add(calibratePanel, "span, growx, wrap");
+        add(runPanel, "span, growx, wrap");
+        add(calibrationPanel, "span, growx, wrap");
         updateGUIFromPrefs();
         updateChannelCalibration();
 
@@ -290,8 +297,8 @@ public class CalibrationPanel extends JPanel {
             if (offsetVal != null) {
                 Double offset = offsetVal.x - offsetVal.y;
                 ij.IJ.log("Detector offset: " + offset + "\n");
-                String printOffset = new DecimalFormat("#.###").format(offset);
-                offsetLabel_.setText("" + printOffset);
+                //String printOffset = new DecimalFormat("#.###").format(offset);
+                //offsetLabel_.setText("" + printOffset);
             }
         } catch (Exception ex) {
             ij.IJ.log(ex.getMessage() + ", Failed to open/close the shutter");
@@ -431,18 +438,18 @@ public class CalibrationPanel extends JPanel {
                         throw new SAIMException("Channel group is not defined");
                     }
                     //Check for offset before running calibration
-                    Double detectorOffset;
-                    try {
-                        Double tmp = Double.parseDouble(offsetLabel_.getText());
-                    } catch (Exception e) {
-                        ij.IJ.error("Calculate offset before running calibration");
-                        throw new SAIMException("Offset was not set");
-                    }
-                    if ((offsetLabel_.getText()) != null) {
-                        detectorOffset = Double.parseDouble(offsetLabel_.getText());
-                    } else {
-                        detectorOffset = 0.0;
-                    }
+                    Double detectorOffset = 0.0;
+                    //try {
+                    //    Double tmp = Double.parseDouble(offsetLabel_.getText());
+                    //} catch (Exception e) {
+                    //    ij.IJ.error("Calculate offset before running calibration");
+                    //    throw new SAIMException("Offset was not set");
+                    //}
+                    //if ((offsetLabel_.getText()) != null) {
+                    //    detectorOffset = Double.parseDouble(offsetLabel_.getText());
+                    //} else {
+                    //    detectorOffset = 0.0;
+                    //}
                     // Parse editable variables for calibration
                     double startPosition;
                     String tmpString = "";
@@ -489,7 +496,7 @@ public class CalibrationPanel extends JPanel {
                     for (int l = 0; l <= nrAngles; l++) {
                         Double motorPosition = dect1gaussianMeans.getX(l).doubleValue();
                         Double dect1val = dect1gaussianMeans.getY(l).doubleValue();
-                        Double dect2val = dect2gaussianMeans.getY(l).doubleValue() + detectorOffset;
+                        Double dect2val = detectorOffset + dect2gaussianMeans.getY(l).doubleValue();
                         //pixel center to center distance is 63.5 um 
                         double xdisp = (dect1val.floatValue() - dect2val.floatValue()) * 0.0635;
                         //detector1 center to detector2 center is 12.95 mm (old detector design was 20.64 mm)
@@ -561,7 +568,7 @@ public class CalibrationPanel extends JPanel {
 
     //function to update panel with stored preferences values
     public final void updateGUIFromPrefs() {
-        zeroMotorPosField_.setText(prefs_.get(PrefUtils.ZEROMOTORPOS, "0.0"));
+        //zeroMotorPosField_.setText(prefs_.get(PrefUtils.ZEROMOTORPOS, "0.0"));
         serialPortBox_.setSelectedItem(prefs_.get(PrefUtils.SERIALPORT, ""));
         tirfDeviceBox_.setSelectedItem(prefs_.get(PrefUtils.TIRFDEVICE, ""));
         updateDeviceGUI();
