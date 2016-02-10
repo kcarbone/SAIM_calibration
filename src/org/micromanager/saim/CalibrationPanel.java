@@ -93,7 +93,7 @@ public class CalibrationPanel extends JPanel {
 
         final Dimension componentSize = new Dimension(150, 30);
 
-        setupPanel.add(new JLabel("Select Serial Port"));
+        setupPanel.add(new JLabel("Select Serial Port:"));
         serialPortBox_ = new JComboBox();
         serialPortBox_.setMaximumSize(componentSize);
         serialPortBox_.setMinimumSize(componentSize);
@@ -110,9 +110,9 @@ public class CalibrationPanel extends JPanel {
                 prefs_.put(PrefUtils.SERIALPORT, (String) serialPortBox_.getSelectedItem());
             }
         });
-        setupPanel.add(serialPortBox_, "wrap");
+        setupPanel.add(serialPortBox_, "span, wrap");
 
-        setupPanel.add(new JLabel("Select TIRF motor device"));
+        setupPanel.add(new JLabel("Select TIRF motor device:"));
         tirfDeviceBox_ = new JComboBox();
         tirfDeviceBox_.setMaximumSize(componentSize);
         tirfDeviceBox_.setMinimumSize(componentSize);
@@ -125,10 +125,10 @@ public class CalibrationPanel extends JPanel {
             tirfDeviceBox_.addItem(stagePorts.get(i));
         }
         tirfDeviceBox_.setSelectedItem(prefs_.get(PrefUtils.TIRFDEVICE, ""));
-        setupPanel.add(tirfDeviceBox_, "wrap");
+        setupPanel.add(tirfDeviceBox_, "span, wrap");
 
         //Add TIRF motor position property name
-        setupPanel.add(new JLabel("Select position property"));
+        setupPanel.add(new JLabel("Select position property:"));
         tirfPropBox_ = new JComboBox();
         tirfPropBox_.setMaximumSize(componentSize);
         tirfPropBox_.setMinimumSize(componentSize);
@@ -140,27 +140,6 @@ public class CalibrationPanel extends JPanel {
                 updateDeviceGUI();
             }
         });
-
-        // set zero motor position for calculating offset
-        //setupPanel.add(new JLabel("Set 0 Deg. Motor Position:"));
-        //zeroMotorPosField_ = new JTextField("0");
-        //setTextAttributes(zeroMotorPosField_, componentSize);
-        //GuiUtils.tieTextFieldToPrefs(prefs_, zeroMotorPosField_, PrefUtils.ZEROMOTORPOS);
-        //setupPanel.add(zeroMotorPosField_, "span, growx, wrap");
-
-        // calculate offset button
-        //JButton calcOffsetButton = new JButton("Calculate Offset");
-        //calcOffsetButton.addActionListener(new ActionListener() {
-        //    @Override
-        //    public void actionPerformed(ActionEvent e) {
-        //        runOffsetCalc();
-        //    }
-        //});
-        //setupPanel.add(calcOffsetButton, "span 2, center, wrap");
-
-        //setupPanel.add(new JLabel("Detector Offset:"));
-        //offsetLabel_ = new JLabel("");
-        //setupPanel.add(offsetLabel_, "wrap");
 
         // Calibrate Panel
         JPanel runPanel = new JPanel(new MigLayout(
@@ -218,7 +197,29 @@ public class CalibrationPanel extends JPanel {
                 }
             }
         });
-        runPanel.add(runButton_, "span 2, center, wrap");
+        
+        // set zero motor position for calculating offset
+        //setupPanel.add(new JLabel("Set 0 Deg. Motor Position:"));
+        //zeroMotorPosField_ = new JTextField("0");
+        //setTextAttributes(zeroMotorPosField_, componentSize);
+        //GuiUtils.tieTextFieldToPrefs(prefs_, zeroMotorPosField_, PrefUtils.ZEROMOTORPOS);
+        //setupPanel.add(zeroMotorPosField_, "span, growx, wrap");
+
+        // calculate offset button
+        JButton calcOffsetButton = new JButton("Detect Once");
+        calcOffsetButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                runOffsetCalc();
+            }
+        });
+        runPanel.add(calcOffsetButton, "span, center, wrap");
+        runPanel.add(runButton_, "span, center, wrap");
+
+
+        //setupPanel.add(new JLabel("Detector Offset:"));
+        //offsetLabel_ = new JLabel("");
+        //setupPanel.add(offsetLabel_, "wrap");
 
         
         // Calibration Panel
@@ -289,10 +290,20 @@ public class CalibrationPanel extends JPanel {
      *
      */
     private void runOffsetCalc() {
-        final double zeroPos = Double.parseDouble(prefs_.get(PrefUtils.ZEROMOTORPOS, "0.0"));
+        //final double zeroPos = Double.parseDouble(prefs_.get(PrefUtils.ZEROMOTORPOS, "0.0"));
+        final String deviceName = tirfDeviceBox_.getSelectedItem().toString();
+        final String propName = tirfPropBox_.getSelectedItem().toString();
+        //Initialize xyseries to collect pixel intensity values
+
+        double currentPos = 0;
+        try {
+            currentPos = Double.parseDouble(core_.getPropertyFromCache(deviceName, propName));
+        } catch (Exception ex) {
+            ij.IJ.log("Motor position cannot be converted to double, is setup correct?");
+        }
         try {
             core_.setShutterOpen(true);
-            Point2D.Double offsetVal = takeSnapshot(zeroPos, "Offset Scan");
+            Point2D.Double offsetVal = takeSnapshot(currentPos, "Intensity Profile");
             core_.setShutterOpen(false);
             if (offsetVal != null) {
                 Double offset = offsetVal.x - offsetVal.y;
