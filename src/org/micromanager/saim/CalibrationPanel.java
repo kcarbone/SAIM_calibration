@@ -84,7 +84,7 @@ public class CalibrationPanel extends JPanel {
         gui_ = gui;
         core_ = gui_.getMMCore();
         prefs_ = prefs;
-        this.setName("Calibration");
+        super.setName("Calibration");
 
         // Setup Panel
         JPanel setupPanel = new JPanel(new MigLayout(
@@ -210,7 +210,7 @@ public class CalibrationPanel extends JPanel {
         calcOffsetButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                runOffsetCalc();
+                runOnce();
             }
         });
         runPanel.add(calcOffsetButton, "span, center, wrap");
@@ -243,9 +243,9 @@ public class CalibrationPanel extends JPanel {
         calibrationPanel.add(fitLabel_, "span 2, wrap");
 
         // Combine them all
-        add(setupPanel, "span, growx, wrap");
-        add(runPanel, "span, growx, wrap");
-        add(calibrationPanel, "span, growx, wrap");
+        super.add(setupPanel, "span, growx, wrap");
+        super.add(runPanel, "span, growx, wrap");
+        super.add(calibrationPanel, "span, growx, wrap");
         updateGUIFromPrefs();
         updateChannelCalibration();
 
@@ -284,17 +284,16 @@ public class CalibrationPanel extends JPanel {
     }
 
     /**
-     * User is supposed to direct the laser beam so that it goes straight up
      * This function opens the shutter and reads out the position of the beam on
-     * both CCDs. These values determine the 0 angle in the final polynomial fit
+     * both CCDs. Used for testing before running the calibration
      *
      */
-    private void runOffsetCalc() {
-        //final double zeroPos = Double.parseDouble(prefs_.get(PrefUtils.ZEROMOTORPOS, "0.0"));
+    private void runOnce() {
+       
         final String deviceName = tirfDeviceBox_.getSelectedItem().toString();
         final String propName = tirfPropBox_.getSelectedItem().toString();
+        
         //Initialize xyseries to collect pixel intensity values
-
         double currentPos = 0;
         try {
             currentPos = Double.parseDouble(core_.getPropertyFromCache(deviceName, propName));
@@ -303,13 +302,11 @@ public class CalibrationPanel extends JPanel {
         }
         try {
             core_.setShutterOpen(true);
-            Point2D.Double offsetVal = takeSnapshot(currentPos, "Intensity Profile");
+            Point2D.Double positionVal = takeSnapshot(currentPos, "Intensity Profile");
             core_.setShutterOpen(false);
-            if (offsetVal != null) {
-                Double offset = offsetVal.x - offsetVal.y;
-                ij.IJ.log("Detector offset: " + offset + "\n");
-                //String printOffset = new DecimalFormat("#.###").format(offset);
-                //offsetLabel_.setText("" + printOffset);
+            if (positionVal != null) {
+                Double position = positionVal.x - positionVal.y;
+                ij.IJ.log("Detector position: " + position + "\n");
             }
         } catch (Exception ex) {
             ij.IJ.log(ex.getMessage() + ", Failed to open/close the shutter");
@@ -318,7 +315,7 @@ public class CalibrationPanel extends JPanel {
 
     /**
      * Opens the shutter, reads out the center position on the top and bottom
-     * CCD, returns these position (as a Point2D.Double
+     * CCD, returns these position (as a Point2D.Double)
      *
      * @param pos position of the "TIRF" motor
      * @param plotTitle String used as title in the plot of the CCD readout
@@ -382,14 +379,15 @@ public class CalibrationPanel extends JPanel {
             //    Number pxvalue = dect1readings.getY(size - 1 - a);
             //    dect1readingsFlip.add(a, pxvalue);
             //}
-            //setup plotting detector readings
+            
+            // setup plotting detector readings
             PlotUtils myPlotter = new PlotUtils(prefs_);
             XYSeries[] toPlot = new XYSeries[4];
             toPlot[0] = dect1readings;
             toPlot[1] = dect2readings;
             boolean[] showShapes = {true, true, false, false};
 
-            //Fit result to a gaussian
+            // Fit result to a gaussian
             double[] result1 = new double[4];
             double[] result2 = new double[4];
             toPlot[2] = new XYSeries(3);
