@@ -6,7 +6,7 @@
 //
 // AUTHOR:       Nico Stuurman, Jon Daniels
 //
-// COPYRIGHT:    University of California, San Francisco, & ASI, 2015
+// COPYRIGHT:    University of California, San Francisco, & ASI, 2015, 2016
 //
 // LICENSE:      This file is distributed under the BSD license.
 //               License text is included with the source distribution.
@@ -43,6 +43,8 @@ public class Fitter {
    private static final String GAUSSIAN = "Gaussian";
    
    public static enum FunctionType {NoFit, Pol1, Pol2, Pol3, Gaussian};
+   public static enum WeightMethod {Equal, Linear, Quadratic, Top50Linear, 
+         Top80Linear}
    
    /**
     * Utility to facilitate fitting data plotted in JFreeChart
@@ -50,8 +52,7 @@ public class Fitter {
     * function parameters that best fit (using least squares) the data. All data
     * points will be weighted equally.
     * 
-    * TODO: investigate whether weighting (possibly automatic weighting) can
-    * improve accuracy
+    * This version provides equal weighting of all datapoints
     * 
     * @param data xy series in JFReeChart format
     * @param type one of the Fitter.FunctionType predefined functions
@@ -64,16 +65,66 @@ public class Fitter {
     *          by this fit
     */
    public static double[] fit(XYSeries data, FunctionType type, double[] guess) {
+       return fit(data, type, guess, WeightMethod.Equal);  
+   }
+   
+   /**
+    * Utility to facilitate fitting data plotted in JFreeChart
+    * Provide data in JFReeChart format (XYSeries), and retrieve univariate
+    * function parameters that best fit (using least squares) the data. All data
+    * points will be weighted equally.
+    * 
+    * Various weightmethods are implemented and can be selected using the 
+    * weightMethods parameter.
+    * 
+    * @param data xy series in JFReeChart format
+    * @param type one of the Fitter.FunctionType predefined functions
+    * @param guess initial guess for the fit.  The number and meaning of these
+             parameters depends on the FunctionType.  Implemented:
+             Gaussian: 0: Normalization, 1: Mean 2: Sigma
+    * @param weightMethod One of the methods in the WeightMethod enum
+
+    * @return array with parameters, whose meaning depends on the FunctionType.
+    *          Use the function getXYSeries to retrieve the XYDataset predicted 
+    *          by this fit
+    */
+   public static double[] fit(XYSeries data, FunctionType type, double[] guess,
+           WeightMethod weightMethod) {
       
       if (type == FunctionType.NoFit) {
          return null;
       }
       // create the commons math data object from the JFreeChart data object
       final WeightedObservedPoints obs = new WeightedObservedPoints();
+      // range is used in weigt calculations
+      double range = data.getMaxY() - data.getMinY();
       for (int i = 0; i < data.getItemCount(); i++) {
-         obs.add(1.0, data.getX(i).doubleValue(), data.getY(i).doubleValue());
+         // add weight based on y intensity and selected weight method
+         double weight = 1.0; // used in Equal method
+         if (weightMethod != WeightMethod.Equal) {
+            double valueMinusMin = data.getY(i).doubleValue() - data.getMinY();
+            weight = valueMinusMin / range;
+            switch (weightMethod) {
+               case Equal: 
+                  break; // weight is already linear
+               case Quadratic: 
+                  weight *= weight;
+                  break;
+               case Top50Linear: 
+                  if ( valueMinusMin < (0.5 * range))
+                     weight = 0.0;
+                  break;
+               case Top80Linear:
+                  if ( valueMinusMin < (0.8 * range))
+                     weight = 0.0;
+                  break;
+            }
+         }
+         
+         obs.add(weight, data.getX(i).doubleValue(), data.getY(i).doubleValue());
       }
       
+      // Carry out the actual fit
       double[] result = null;
       switch (type) {
          case Pol1:
@@ -298,10 +349,10 @@ public class Fitter {
    
    /**
     * Calculate the y value for a given function and x value
-    * Throws an IllegalArgumentException if the pars do not match the function
+    * Throws an IllegalArgumentException if the parms do not match the function
     * @param xValue xValue to be used in the function
     * @param type function type
-    * @param parms function parameters (for instance, as return from the fit function
+    * @param parms function parameters (e.g., as returned from the fit function)
     * @return 
     */
    public static double getFunctionValue(double xValue, FunctionType type,
