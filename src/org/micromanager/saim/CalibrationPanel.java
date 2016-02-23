@@ -393,10 +393,10 @@ public class CalibrationPanel extends JPanel {
             toPlot[2] = new XYSeries(3);
             toPlot[3] = new XYSeries(4);
             try {
-                result1 = Fitter.fit(dect1readings, Fitter.FunctionType.Gaussian, null);
+                result1 = Fitter.fit(dect1readings, Fitter.FunctionType.Gaussian, null, Fitter.WeightMethod.Top50Linear);
                 toPlot[2] = Fitter.getFittedSeries(dect1readings, Fitter.FunctionType.Gaussian, result1);
                 ij.IJ.log("Dectector 1 Mean: " + result1[1] + "\n");
-                result2 = Fitter.fit(dect2readings, Fitter.FunctionType.Gaussian, null);
+                result2 = Fitter.fit(dect2readings, Fitter.FunctionType.Gaussian, null, Fitter.WeightMethod.Top50Linear);
                 toPlot[3] = Fitter.getFittedSeries(dect2readings, Fitter.FunctionType.Gaussian, result2);
                 ij.IJ.log("Dectector 2 Mean: " + result2[1] + "\n");
             } catch (Exception ex) {
