@@ -51,6 +51,7 @@ import org.micromanager.saim.exceptions.SAIMException;
 import org.micromanager.saim.fit.Fitter;
 import org.micromanager.saim.gui.GuiUtils;
 import org.micromanager.saim.plot.PlotUtils;
+import org.micromanager.saim.data.RI;
 
 /**
  *
@@ -67,6 +68,7 @@ public class CalibrationPanel extends JPanel {
     private final JComboBox tirfDeviceBox_;
     private final JComboBox tirfPropBox_;
     //private final JLabel offsetLabel_;
+    private final JTextField wavelengthField_;
     private final JTextField sampleRIField_;
     private final JTextField immersionRIField_;
     private final JTextField startMotorPosField_;
@@ -147,6 +149,13 @@ public class CalibrationPanel extends JPanel {
         runPanel.setBorder(GuiUtils.makeTitledBorder("Run"));
         final Dimension calBoxSize = new Dimension(130, 30);
 
+        // wavelength
+        runPanel.add(new JLabel("Excitation wavelength (nm):"));
+        wavelengthField_ = new JTextField("0");
+        setTextAttributes(wavelengthField_, calBoxSize);
+        GuiUtils.tieTextFieldToPrefs(prefs_, wavelengthField_, PrefUtils.WAVELENGTH);
+        runPanel.add(wavelengthField_, "span, growx, wrap");
+        
         // sampleRI
         runPanel.add(new JLabel("Refractive Index of Sample:"));
         sampleRIField_ = new JTextField("0");
@@ -512,11 +521,13 @@ public class CalibrationPanel extends JPanel {
                         double ydisp = 12.95;
                         Double observedAngle = Math.toDegrees(Math.atan(xdisp / ydisp));
                         //Snells law correction angle of laser light for refractive index 
-                        //Refractive indeces: acrylic = 1.49, water = 1.33, user input = RI
+                        //Refractive indeces: water = 1.33, user input = RI
                         //determine true angle coming out of objective (correct for acrylic)
+                        double wavelength = Double.parseDouble(prefs_.get(PrefUtils.WAVELENGTH,"0.0"));
                         double immersionRI = Double.parseDouble(prefs_.get(PrefUtils.IMMERSIONRI, "1.33"));
                         double sampleRI = Double.parseDouble(prefs_.get(PrefUtils.SAMPLERI, "1.33"));
-                        Double firstCorrect = snellIt(observedAngle, 1.49, immersionRI);
+                        double nAcr = RI.getRI(RI.Compound.ACRYLIC, wavelength);
+                        Double firstCorrect = snellIt(observedAngle, nAcr, immersionRI);
                         //determine true angle hitting the sample (correct for water/buffer)
                         Double trueAngle = snellIt(firstCorrect, immersionRI, sampleRI);
                         observedAngles.add(trueAngle, motorPosition);

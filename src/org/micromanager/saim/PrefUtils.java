@@ -20,6 +20,7 @@ public class PrefUtils {
     public final static String TIRFDEVICE = "tirfdevice";
     public final static String TIRFPROP = "tirfprop";
     public final static String ZEROMOTORPOS = "motorposition";
+    public final static String WAVELENGTH = "wavelength";
     public final static String SAMPLERI = "sampleri";
     public final static String IMMERSIONRI = "immersionri";
     public final static String STARTMOTORPOS = "startmotorposition";
@@ -51,7 +52,7 @@ public class PrefUtils {
         String grp;
         try {
             grp = core.getChannelGroup();
-            channelString = "CALIBRATIONS-" + grp + "-"+ core.getCurrentConfigFromCache(grp);
+            channelString = "CALIBRATIONS-" + grp + "-" + core.getCurrentConfigFromCache(grp);
             prefs.put(PrefUtils.CHANNEL, core.getCurrentConfigFromCache(grp));
         } catch (Exception ex) {
             Logger.getLogger(PrefUtils.class.getName()).log(Level.SEVERE, null, ex);
